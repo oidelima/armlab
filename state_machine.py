@@ -21,6 +21,13 @@ class StateMachine():
     """ This function is run continuously in a thread"""
 
     def run(self):
+        waypoints = [[ 0.0, 0.0, 0.0, 0.0, 0.0],
+                    [ 1.0, 0.8, 1.0, 0.5, 1.0],
+                    [-1.0,-0.8,-1.0,-0.5, -1.0],
+                    [-1.0, 0.8, 1.0, 0.5, 1.0],
+                    [1.0, -0.8,-1.0,-0.5, -1.0],
+                    [ 0.0, 0.0, 0.0, 0.0, 0.0]]
+
         if(self.current_state == "manual"):
             if (self.next_state == "manual"):
                 self.manual()
@@ -28,6 +35,8 @@ class StateMachine():
                 self.idle()                
             if(self.next_state == "estop"):
                 self.estop()
+            if(self.next_state == "execute"):
+                self.execute(waypoints)
 
         if(self.current_state == "idle"):
             if(self.next_state == "manual"):
@@ -38,6 +47,8 @@ class StateMachine():
                 self.estop()
             if(self.next_state == "calibrate"):
                 self.calibrate()
+            if(self.next_state == "execute"):
+                self.execute(waypoints)
                 
         if(self.current_state == "estop"):
             self.next_state = "estop"
@@ -47,6 +58,8 @@ class StateMachine():
             if(self.next_state == "idle"):
                 self.idle()
                
+
+
 
     """Functions run for each state"""
 
@@ -67,6 +80,20 @@ class StateMachine():
         self.current_state = "estop"
         self.rexarm.disable_torque()
         self.rexarm.get_feedback()
+
+    def execute(self, waypoints):
+        self.status_message = "Executing ..."
+        self.current_state = "execute"
+        self.rexarm.get_feedback()
+        for waypoint in waypoints:
+            self.rexarm.set_positions(waypoint)
+            self.rexarm.pause(1)
+        self.set_next_state("idle")
+
+        
+
+   
+
         
     def calibrate(self):
         self.current_state = "calibrate"
@@ -96,6 +123,8 @@ class StateMachine():
                     self.kinect.depth_click_points[i] = self.kinect.last_click.copy()
                     i = i + 1
                     self.kinect.new_click = False
+
+        
    
         print(self.kinect.rgb_click_points)
         print(self.kinect.depth_click_points)

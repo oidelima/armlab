@@ -33,7 +33,7 @@ MAX_Y = 520
 
 """ Serial Port Parameters"""
 BAUDRATE   = 1000000
-DEVICENAME = "/dev/ttyACM0".encode('utf-8')
+DEVICENAME = "/dev/ttyACM1".encode('utf-8')
 
 """Threads"""
 class VideoThread(QThread):
@@ -116,6 +116,7 @@ class Gui(QMainWindow):
         TODO: NAME AND CONNECT BUTTONS AS NEEDED
         """
         self.ui.btn_estop.clicked.connect(self.estop)
+        self.ui.btn_exec.clicked.connect(self.execute)
         self.ui.btnUser1.setText("Calibrate")
         self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
@@ -202,6 +203,9 @@ class Gui(QMainWindow):
     def estop(self):
         self.rexarm.estop = True
         self.sm.set_next_state("estop")
+
+    def execute(self):
+        self.sm.set_next_state("execute")
 
     def sliderChange(self):
         """ 

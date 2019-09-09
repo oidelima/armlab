@@ -70,7 +70,7 @@ class Rexarm():
         pass
 
     def set_positions(self, joint_angles, update_now = True):
-        self.clamp(joint_angles)
+        joint_angles = self.clamp(joint_angles)
         for i,joint in enumerate(self.joints):
             self.position[i] = joint_angles[i]
             if(update_now):
@@ -157,9 +157,28 @@ class Rexarm():
                 break
 
     def clamp(self, joint_angles):
-        """TODO"""
-        pass
+        #print(get_positions(self))
+        #assuiming all in nominal position and only one dof
+        #S -> -1.74532889 to 1.74532889
+        #E ->-1.58824929 TO  1.58824929
+        #W1 ->-2.6 to 2.6
+        #W2 -> -1.7 TO 1.7
+        temp = joint_angles
+        
+        if abs(temp[1]) > 1.74:
+            joint_angles[1] = 1.74*temp[1]/abs(temp[1])
+        if abs(temp[2]) > 1.58:
+            joint_angles[2] = 1.58*temp[2]/abs(temp[2])
+        if abs(temp[3]) > 2.6:
+            joint_angles[3] = 2.6*temp[3]/abs(temp[3])
+        if abs(temp[4]) > 1.7:
+            joint_angles[4] = 1.7*temp[4]/abs(temp[4])
+        print(joint_angles)
+        return joint_angles
+        
+        
 
     def get_wrist_pose(self):
         """TODO"""
         return [0,0,0,0,0,0]
+ 
