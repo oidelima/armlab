@@ -117,6 +117,8 @@ class Gui(QMainWindow):
         """
         self.ui.btn_estop.clicked.connect(self.estop)
         self.ui.btn_exec.clicked.connect(self.execute)
+        self.ui.btn_task1.clicked.connect(self.record) 
+        self.ui.btn_task2.clicked.connect(self.clear_waypoints) 
         self.ui.btnUser1.setText("Calibrate")
         self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
@@ -207,6 +209,13 @@ class Gui(QMainWindow):
     def execute(self):
         self.sm.set_next_state("execute")
 
+    def record(self):
+        self.sm.set_next_state("record")
+
+    def clear_waypoints(self):
+        self.sm.waypoints = []
+        
+
     def sliderChange(self):
         """ 
         Function to change the slider labels when sliders are moved
@@ -234,9 +243,11 @@ class Gui(QMainWindow):
         if state == Qt.Checked:
             self.sm.set_next_state("manual")
             self.ui.SliderFrame.setEnabled(True)
+            self.ui.sldrMaxTorque.setValue(0)
         else:
             self.sm.set_next_state("idle")
             self.ui.SliderFrame.setEnabled(False)
+            self.ui.sldrMaxTorque.setValue(50)
 
     def trackMouse(self):
         """ 

@@ -13,6 +13,8 @@ class StateMachine():
         self.status_message = "State: Idle"
         self.current_state = "idle"
         self.next_state = "idle"
+        self.prev_state = "idle"
+        self.waypoints = []
 
 
     def set_next_state(self, state):
@@ -21,14 +23,9 @@ class StateMachine():
     """ This function is run continuously in a thread"""
 
     def run(self):
-        waypoints = [[ 0.0, 0.0, 0.0, 0.0, 0.0],
-                    [ 1.0, 0.8, 1.0, 0.5, 1.0],
-                    [-1.0,-0.8,-1.0,-0.5, -1.0],
-                    [-1.0, 0.8, 1.0, 0.5, 1.0],
-                    [1.0, -0.8,-1.0,-0.5, -1.0],
-                    [ 0.0, 0.0, 0.0, 0.0, 0.0]]
-
+        
         if(self.current_state == "manual"):
+            self.prev_state = "manual"
             if (self.next_state == "manual"):
                 self.manual()
             if(self.next_state == "idle"):
@@ -36,9 +33,21 @@ class StateMachine():
             if(self.next_state == "estop"):
                 self.estop()
             if(self.next_state == "execute"):
-                self.execute(waypoints)
+                self.execute()
+            if(self.next_state == "record"):
+                self.record()
+
+        if(self.current_state == "execute"):
+            self.prev_state = "execute"
+            if (self.next_state == "idle"):
+                self.idle()
+            if(self.next_state == "estop"):
+                self.estop()
+            if(self.next_state == "manual"):
+                self.manual()
 
         if(self.current_state == "idle"):
+            self.prev_state = "idle"
             if(self.next_state == "manual"):
                 self.manual()
             if(self.next_state == "idle"):
@@ -48,13 +57,23 @@ class StateMachine():
             if(self.next_state == "calibrate"):
                 self.calibrate()
             if(self.next_state == "execute"):
-                self.execute(waypoints)
+                self.execute()
+        
+        if(self.current_state == "record"):
+            self.prev_state = "record"
+            if(self.next_state == "manual"):
+                self.manual()
+            if(self.next_state == "record"):
+                self.record()
+            
                 
         if(self.current_state == "estop"):
+            self.prev_state = "estop"
             self.next_state = "estop"
             self.estop()  
 
         if(self.current_state == "calibrate"):
+            self.prev_state = "calibrate"
             if(self.next_state == "idle"):
                 self.idle()
                
@@ -81,16 +100,30 @@ class StateMachine():
         self.rexarm.disable_torque()
         self.rexarm.get_feedback()
 
-    def execute(self, waypoints):
+    def execute(self):
         self.status_message = "Executing ..."
         self.current_state = "execute"
         self.rexarm.get_feedback()
-        for waypoint in waypoints:
+        print("Execute: ",self.waypoints)
+        for waypoint in self.waypoints:
+            print(waypoint)
             self.rexarm.set_positions(waypoint)
             self.rexarm.pause(1)
-        self.set_next_state("idle")
-
+        if self.prev_state == "manual":
+            self.set_next_state("manual")
+        else:
+            self.set_next_state("idle")
         
+
+    def record(self):
+        
+        self.current_state = "record"
+        print("get positions : ",self.rexarm.get_positions())
+        self.waypoints.append(self.rexarm.get_positions()[:]) 
+        self.status_message = "Recording waypoint: " + str(self.rexarm.get_positions())
+        print(self.rexarm.get_positions())
+        print("Waypoint: ", self.waypoints)
+        self.set_next_state("manual")
 
    
 

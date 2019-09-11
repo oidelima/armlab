@@ -173,7 +173,6 @@ class Rexarm():
             joint_angles[3] = 2.6*temp[3]/abs(temp[3])
         if abs(temp[4]) > 1.7:
             joint_angles[4] = 1.7*temp[4]/abs(temp[4])
-        print(joint_angles)
         return joint_angles
         
         
