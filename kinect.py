@@ -111,6 +111,33 @@ class Kinect():
         pts1 = coord1[0:3].astype(np.float32)
         pts2 = coord2[0:3].astype(np.float32)
         print(cv2.getAffineTransform(pts1,pts2))
+        matrix_A = np.array([[coord1[0][0], coord1[0][1], 1, 0.0, 0.0, 0.0],
+                             [0.0, 0.0, 0.0, coord1[0][0], coord1[0][1], 1],
+                             [coord1[1][0], coord1[1][1], 1, 0.0, 0.0, 0.0],
+                             [0.0, 0.0, 0.0, coord1[1][0], coord1[1][1], 1],
+                             [coord1[2][0], coord1[2][1], 1, 0.0, 0.0, 0.0],
+                             [0.0, 0.0, 0.0, coord1[2][0], coord1[2][1], 1]])
+
+        print("Matrix A : ", matrix_A)
+
+        vector_b = np.array([[coord1[0][0]],
+                             [coord1[0][1]],
+                             [coord1[1][0]],
+                             [coord1[1][1]],
+                             [coord1[2][0]],
+                             [coord1[2][1]]])
+        
+        print("Print vector b : ", vector_b)
+
+        vector_x = np.zeros((6,1))
+
+        matrix_A_inv = np.linalg.inv(matrix_A)
+
+        print("Matrix A inv : ", matrix_A_inv)
+
+        vextor_x = matrix_A_inv*vector_b
+
+        print("To Do code Affine Transform : ", vector_x)
         return cv2.getAffineTransform(pts1,pts2)
 
 
@@ -119,6 +146,7 @@ class Kinect():
         TODO:
         Using an Affine transformation, transform the depth frame to match the RGB frame
         """
+
         pass
 
     def loadCameraCalibration(self):
@@ -126,7 +154,8 @@ class Kinect():
         TODO:
         Load camera intrinsic matrix from file.
         """
-        pass
+        intrinsic_matrix = np.array([[523.07835767, 0.0,303.93789919],[0.0, 522.81772202, 278.02015252],[0.0, 0.0, 1.0]])
+        return intrinsic_matrix
     
     def blockDetector(self):
         """
