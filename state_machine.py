@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import camera_cal
 
 """
 TODO: Add states and state functions to this class
@@ -36,6 +37,8 @@ class StateMachine():
                 self.execute()
             if(self.next_state == "record"):
                 self.record()
+            if(self.next_state == "calibrate"):
+                self.calibrate()
 
         if(self.current_state == "execute"):
             self.prev_state = "execute"
@@ -76,9 +79,8 @@ class StateMachine():
             self.prev_state = "calibrate"
             if(self.next_state == "idle"):
                 self.idle()
-               
-
-
+            if(self.next_state == "manual"):
+                self.manual()
 
     """Functions run for each state"""
 
@@ -130,7 +132,13 @@ class StateMachine():
         
     def calibrate(self):
         self.current_state = "calibrate"
-        self.next_state = "idle"
+        #self.next_state = "idle"
+        if self.prev_state == "manual":
+            self.set_next_state("manual")
+        else:
+            self.set_next_state("idle")
+
+
         self.tp.go(max_speed=2.0)
         location_strings = ["lower left corner of board",
                             "upper left corner of board",
@@ -163,6 +171,9 @@ class StateMachine():
         print(self.kinect.depth_click_points)
 
         """TODO Perform camera calibration here"""
+        
+        affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
+        print("Affine Transform is : ", affine_transform)
 
         self.status_message = "Calibration - Completed Calibration"
         time.sleep(1)
