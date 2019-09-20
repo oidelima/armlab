@@ -33,7 +33,7 @@ MAX_Y = 520
 
 """ Serial Port Parameters"""
 BAUDRATE   = 1000000
-DEVICENAME = "/dev/ttyACM1".encode('utf-8')
+DEVICENAME = "/dev/ttyACM0".encode('utf-8')
 
 """Threads"""
 class VideoThread(QThread):
@@ -208,6 +208,8 @@ class Gui(QMainWindow):
 
     def execute(self):
         self.sm.set_next_state("execute")
+        self.ui.sldrMaxTorque.setValue(50)
+
 
     def record(self):
         self.sm.set_next_state("record")
