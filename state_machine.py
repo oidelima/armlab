@@ -110,6 +110,7 @@ class StateMachine():
         print("Execute: ",self.waypoints)
         for i in range(len(self.waypoints)):
             [q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), self.waypoints[i], 4)
+
             self.tp.execute_plan([q,v])
 
         if self.prev_state == "manual":
