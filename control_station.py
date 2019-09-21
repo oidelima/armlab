@@ -10,6 +10,7 @@ from PyQt4.QtGui import (QPixmap, QImage, QApplication, QWidget, QLabel, QMainWi
 
 import os
 os.sys.path.append('dynamixel/') # Path setting
+os.system('cls' if os.name == 'nt' else 'clear')
 from dynamixel_XL import *
 from dynamixel_AX import *
 from dynamixel_MX import *
@@ -267,10 +268,13 @@ class Gui(QMainWindow):
         else:
             x = x - MIN_X
             y = y - MIN_Y
-            if(self.kinect.currentDepthFrame.any() != 0):
-                z = self.kinect.currentDepthFrame[y][x]
-                self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" % (x,y,z))
-                self.ui.rdoutMouseWorld.setText("(-,-,-)")
+            if(self.kinect.currentDepthFrame.any() != 0):			
+		z = self.kinect.currentDepthFrame[y][x]
+               	self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" % (x,y,z))
+		x_w = 0
+		y_w = 0
+		z_w = 0
+		self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.0f)" % (x_w,y_w,z_w))
 
     def mousePressEvent(self, QMouseEvent):
         """ 

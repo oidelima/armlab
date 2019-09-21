@@ -161,10 +161,10 @@ class StateMachine():
         for j in range(5):
             self.status_message = "Calibration - Click %s in depth image" % location_strings[j]
             while (i <= j):
-                self.rexarm.get_feedback()
-                if(self.kinect.new_click == True):
+               self.rexarm.get_feedback()
+               if(self.kinect.new_click == True):
                     self.kinect.depth_click_points[i] = self.kinect.last_click.copy()
-                    i = i + 1
+		    i = i + 1
                     self.kinect.new_click = False
 
         
@@ -173,9 +173,8 @@ class StateMachine():
         print(self.kinect.depth_click_points)
 
         """TODO Perform camera calibration here"""
-        
         affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
-        print("Affine Transform is : ", affine_transform)
 
+	self.kinect.kinectCalibrated = True
         self.status_message = "Calibration - Completed Calibration"
         time.sleep(1)

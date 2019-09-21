@@ -109,29 +109,29 @@ class Kinect():
         find the transform without using cv2 functions
         """
 	### coord1 are RGB coordinates and coord2 are Depth Camera coordinates
-        pts1 = coord1[0:5].astype(np.float32)
-        pts2 = coord2[0:5].astype(np.float32)
+        pts1 = coord2[0:5].astype(np.float32)
+        pts2 = coord1[0:5].astype(np.float32)
 	
 	### Defining Affine Matrix components in vector_x, RGB coordinates in matrix A, and Depth Coordinates in vector_b
         vector_x = np.ones((8,1))
 	
-	matrix_A = np.array([[coord1[0][0], coord1[0][1], 1, 0.0, 0.0, 0.0],
-                             [0.0, 0.0, 0.0, coord1[0][0], coord1[0][1], 1],
-                             [coord1[1][0], coord1[1][1], 1, 0.0, 0.0, 0.0],
-                             [0.0, 0.0, 0.0, coord1[1][0], coord1[1][1], 1],
-                             [coord1[2][0], coord1[2][1], 1, 0.0, 0.0, 0.0],
-                             [0.0, 0.0, 0.0, coord1[2][0], coord1[2][1], 1],
-                             [coord1[3][0], coord1[3][1], 1, 0.0, 0.0, 0.0],
-                             [0.0, 0.0, 0.0, coord1[3][0], coord1[3][1], 1]]).astype(np.float32)
+	matrix_A = np.array([[pts1[0][0], pts1[0][1], 1, 0.0, 0.0, 0.0],
+                             [0.0, 0.0, 0.0, pts1[0][0], pts1[0][1], 1],
+                             [pts1[1][0], pts1[1][1], 1, 0.0, 0.0, 0.0],
+                             [0.0, 0.0, 0.0, pts1[1][0], pts1[1][1], 1],
+                             [pts1[2][0], pts1[2][1], 1, 0.0, 0.0, 0.0],
+                             [0.0, 0.0, 0.0, pts1[2][0], pts1[2][1], 1],
+                             [pts1[3][0], pts1[3][1], 1, 0.0, 0.0, 0.0],
+                             [0.0, 0.0, 0.0, pts1[3][0], pts1[3][1], 1]]).astype(np.float32)
 
-        vector_b = np.array([[coord2[0][0]],
-                             [coord2[0][1]],
-                             [coord2[1][0]],
-                             [coord2[1][1]],
-                             [coord2[2][0]],
-                             [coord2[2][1]],
-                             [coord2[3][0]],
-                             [coord2[3][1]]]).astype(np.float32)
+        vector_b = np.array([[pts2[0][0]],
+                             [pts2[0][1]],
+                             [pts2[1][0]],
+                             [pts2[1][1]],
+                             [pts2[2][0]],
+                             [pts2[2][1]],
+                             [pts2[3][0]],
+                             [pts2[3][1]]]).astype(np.float32)
 
 
 	
@@ -142,9 +142,12 @@ class Kinect():
 	
 	### Calculating affine matrix components
         vector_x = np.matmul(matrix_A_inv,vector_b)
-
-	return vector_x.reshape(2,3)        
-
+	
+	affineMatrixTransformation = np.array([[vector_x[0], vector_x[1], vector_x[2]],
+					       [vector_x[3], vector_x[4], vector_x[5]],
+					       [	  0,	       0, 	   1]])
+	self.depth2rgb_affine = vector_x.reshape(2,3)
+	return self.depth2rgb_affine
 
 
     def registerDepthFrame(self, frame):
@@ -152,7 +155,19 @@ class Kinect():
         TODO:
         Using an Affine transformation, transform the depth frame to match the RGB frame
         """
-	return None
+	transformedDepthFrame = np.zeros((len(frame),len(frame[0])))
+	n_rows = len(frame)
+	n_columns = len(frame[0])
+	
+	for x in range(n_columns):
+		for y in range(n_rows):
+			vector_depth = np.array([x,y,1])
+			x_t = int(np.matmul(self.depth2rgb_affine[0],vector_depth))
+			y_t = int(np.matmul(self.depth2rgb_affine[1],vector_depth))
+			if x_t < n_columns and x_t >= 0 and y_t < n_rows and y_t >= 0:
+				transformedDepthFrame[y_t][x_t] = frame[y][x]
+
+	return transformedDepthFrame
 
 
     def loadCameraCalibration(self):
