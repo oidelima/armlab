@@ -1,4 +1,5 @@
 import cv2
+import apriltag
 import numpy as np
 from PyQt4.QtGui import QImage
 import freenect
@@ -178,6 +179,14 @@ class Kinect():
         intrinsic_matrix = np.array([[523.07835767, 0.0,303.93789919],[0.0, 522.81772202, 278.02015252],[0.0, 0.0, 1.0]])
         return intrinsic_matrix
     
+    def apriltagdetection(self):
+	detector = apriltag.Detector(families='tag36h11', border=1, nthreads=4, quad_decimate=1.0,quad_blur=0.0,refine_edges=True,debug=False,quad_contours=True)
+	image = self.currentVideoFrame	
+	image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+	print(image)
+	detections = detector.detect(image)
+	print detections
+
     def blockDetector(self):
         """
         TODO:

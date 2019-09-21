@@ -99,6 +99,7 @@ class Gui(QMainWindow):
         Dynamixel bus
         TODO: add other motors here as needed with their correct address"""
         self.dxlbus = DXL_BUS(DEVICENAME, BAUDRATE)
+
         port_num = self.dxlbus.port()
         base = DXL_MX(port_num, 1)
         shld = DXL_MX(port_num, 2)
@@ -273,7 +274,7 @@ class Gui(QMainWindow):
                	self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" % (x,y,z))
 		x_w = 0
 		y_w = 0
-		z_w = 0
+		z_w = .1236*np.tan(z/2842.5 + 1.1863)
 		self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.0f)" % (x_w,y_w,z_w))
 
     def mousePressEvent(self, QMouseEvent):

@@ -171,7 +171,7 @@ class StateMachine():
    
         print(self.kinect.rgb_click_points)
         print(self.kinect.depth_click_points)
-
+	
         """TODO Perform camera calibration here"""
         affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
 
