@@ -11,6 +11,8 @@ from PyQt4.QtGui import (QPixmap, QImage, QApplication, QWidget, QLabel, QMainWi
 import os
 os.sys.path.append('dynamixel/') # Path setting
 os.system('cls' if os.name == 'nt' else 'clear')
+os.system('cls' if os.name == 'nt' else 'clear')
+os.system('cls' if os.name == 'nt' else 'clear')
 from dynamixel_XL import *
 from dynamixel_AX import *
 from dynamixel_MX import *
@@ -38,7 +40,7 @@ DEVICENAME = "/dev/ttyACM0".encode('utf-8')
 
 """Threads"""
 class VideoThread(QThread):
-    updateFrame = pyqtSignal(QImage, QImage, QImage, QImage)
+    updateFrame = pyqtSignal(QImage, QImage)
 
     def __init__(self, kinect, parent=None):
         QThread.__init__(self, parent=parent) 
@@ -50,9 +52,7 @@ class VideoThread(QThread):
             self.kinect.captureDepthFrame()
             rgb_frame = self.kinect.convertFrame()
             depth_frame = self.kinect.convertDepthFrame()
-	    user1_frame = self.kinect.convertGrayFrame()
-	    user2_frame = self.kinect.convertHSVFrame()
-            self.updateFrame.emit(rgb_frame, depth_frame, user1_frame, user2_frame)
+            self.updateFrame.emit(rgb_frame, depth_frame)
             time.sleep(.03)
 
 class LogicThread(QThread):   
@@ -125,8 +125,8 @@ class Gui(QMainWindow):
         self.ui.btn_task2.clicked.connect(self.clear_waypoints) 
         self.ui.btnUser1.setText("Calibrate")
         self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
-	self.ui.btnUser1.setText("Capture Frame")
-        #self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "block detection"))
+		#self.ui.btnUser2.setText("Capture Frame")
+        #self.ui.btnUser2.clicked.connect(partial(self.sm.set_next_state, "block detection"))
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
         self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
         self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
@@ -171,16 +171,12 @@ class Gui(QMainWindow):
 
     """ Slots attach callback functions to signals emitted from threads"""
 
-    @pyqtSlot(QImage, QImage, QImage, QImage)
-    def setImage(self, rgb_image, depth_image, gray_image, hsv_image):
+    @pyqtSlot(QImage, QImage)
+    def setImage(self, rgb_image, depth_image):
         if(self.ui.radioVideo.isChecked()):
             self.ui.videoDisplay.setPixmap(QPixmap.fromImage(rgb_image))
         if(self.ui.radioDepth.isChecked()):
             self.ui.videoDisplay.setPixmap(QPixmap.fromImage(depth_image))
-	if(self.ui.radioUsr1.isChecked()):
-            self.ui.videoDisplay.setPixmap(QPixmap.fromImage(gray_image))
-	if(self.ui.radioUsr2.isChecked()):
-            self.ui.videoDisplay.setPixmap(QPixmap.fromImage(hsv_image))
 
 
     @pyqtSlot(list)
