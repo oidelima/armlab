@@ -29,6 +29,11 @@ class Kinect():
 		self.DepthHSV = np.zeros((480,640,3)).astype(np.uint8)
 		self.DepthCM=np.array([])
 
+		# Block Depth Isolation
+		self.DepthHSVThreshold = np.zeros((480,640,3)).astype(np.uint8)
+		self.DepthCMThreshold = np.array([])
+		self.BlockMask = np.zeros((480,640,1)).astype(np.uint8)
+
 		""" block info """
 		self.block_contours = np.array([])
 
@@ -222,7 +227,100 @@ class Kinect():
 						   [	  0,	       0, 	   1]])
 		self.workcamera_affine = vector_x.reshape(2,3)
 		return self.workcamera_affine
+
+	def apriltagdetection(self):
+		detector = apriltag.Detector(families='tag36h11', border=1, nthreads=4, quad_decimate=1.0,quad_blur=0.0,refine_edges=True,debug=False,quad_contours=True)
+		image = self.currentVideoFrame	
+		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+		print(image)
+		detections = detector.detect(image)
+		print detections
+
+	def convertGrayFrame(self):
+		""" Converts frame to format to Gray for Qt  """
+		try:
+			image = cv2.cvtColor(self.currentVideoFrame, cv2.COLOR_RGB2GRAY)
+			img = QImage(image, image.shape[1], image.shape[0], QImage.Format_Indexed8)
+			return img
+		except:
+			return None
+   
+	def convertHSVFrame(self):
+		""" Converts frame to format to HSV for Qt  """
+		try:
+			image = cv2.cvtColor(self.currentVideoFrame, cv2.COLOR_RGB2HSV)
+			img = QImage(image[:][:][0], image.shape[1], image.shape[0], QImage.Format_RGB888)
+			return img
+		except:
+			return None
+
+	def convertBlockDepthFrame(self):
+		""" Converts frame to a colormaped format suitable for Qt  
+			Note: this cycles the spectrum over the lowest 8 bits
+		"""
+		try:
+
+			""" 
+			Convert Depth frame to rudimentary colormap
+			"""
+			#self.DepthHSVThreshold[...,0] = self.currentDepthFrame/2
+			#print(self.currentDepthFrame)
+			self.BlockMask = np.zeros((480,640,1)).astype(np.uint8)
+			self.DepthHSVThreshold[...,0] = self.currentDepthFrame
+			self.DepthHSVThreshold[self.currentDepthFrame > 715 ,0] = 0
+			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,0] = 0
+			#self.DepthHSVThreshold[...,0] = (self.DepthHSVThreshold[...,0] - 650)*256/65
+			self.BlockMask[self.DepthHSVThreshold[...,0] != 0] = 1
+			
+			self.DepthHSVThreshold[...,1] = 0x9F
+			self.DepthHSVThreshold[...,2] = 0xFF
+			self.DepthHSVThreshold[self.currentDepthFrame > 715 ,1] = 0
+			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,1] = 0
+			self.DepthHSVThreshold[self.currentDepthFrame > 715 ,2] = 0
+			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,2] = 0
+			self.DepthCMThreshold = cv2.cvtColor(self.DepthHSVThreshold,cv2.COLOR_HSV2RGB)
+			cv2.drawContours(self.DepthCMThreshold,self.block_contours,-1,(0,0,0),3)
+			#self.DepthCMThreshold = self.DepthHSVThreshold
+			img = QImage(self.DepthCMThreshold,
+							 self.DepthCMThreshold.shape[1],
+							 self.DepthCMThreshold.shape[0],
+							 QImage.Format_RGB888
+							 )
+			return img
+		except:
+			return None
+
+	def blockDetector(self):
+		"""
+		TODO:
+		Implement your block detector here.  
+		You will need to locate
+		blocks in 3D space
+		"""
+
+		image = self.currentVideoFrame
+		hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+		hue_image = cv2.bitwise_and(hsv_image[...,0], hsv_image[...,0], mask = self.BlockMask)
+		saturation_image = cv2.bitwise_and(hsv_image[...,1], hsv_image[...,1], mask = self.BlockMask)
+		value_image = cv2.bitwise_and(hsv_image[...,2], hsv_image[...,2], mask = self.BlockMask)
+		cv2.imwrite("hue.jpg",hue_image)
+		cv2.imwrite("saturation.jpg",saturation_image)
+		cv2.imwrite("value.jpg",value_image)
+		
+			
+
+
 	
+		pass
+
+	def detectBlocksInDepthImage(self):
+		"""
+		TODO:
+		Implement a blob detector to find blocks
+		in the depth image
+		"""
+		pass
+
 	def workspaceTransform(self, coordinates):
 		camera_matrix = self.loadCameraCalibration()
 		dist_coeffs = np.array([[2.81543125e-01,-1.41320279e+00,-1.51367772e-03,4.17417744e-03,2.92511446e+00]]).astype(np.float32)
@@ -244,58 +342,3 @@ class Kinect():
 	#self.rotation_matrix = rot_vec	
 		self.translation_matrix = trans_vec
 		return self.rotation_matrix, self.translation_matrix
-
-	def apriltagdetection(self):
-		detector = apriltag.Detector(families='tag36h11', border=1, nthreads=4, quad_decimate=1.0,quad_blur=0.0,refine_edges=True,debug=False,quad_contours=True)
-		image = self.currentVideoFrame	
-		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-		print(image)
-		detections = detector.detect(image)
-		print detections
-
-	def convertGrayFrame(self):
-		""" Converts frame to format to Gray for Qt  """
-		try:
-			image = cv2.cvtColor(self.currentVideoFrame, cv2.COLOR_RGB2GRAY)
-			img = QImage(image,
-							 image.shape[1],
-							 image.shape[0],
-							 QImage.Format_Indexed8
-							 )
-			return img
-		except:
-			return None
-   
-	def convertHSVFrame(self):
-		""" Converts frame to format to HSV for Qt  """
-		try:
-			mage = cv2.cvtColor(self.currentVideoFrame, cv2.COLOR_RGB2HSV)
-			img = QImage(image[:][:][1],
-							 image.shape[1],
-							 image.shape[0],
-							 QImage.Format_RGB888
-							 )
-			return img
-		except:
-			return None
-
-	def blockDetector(self):
-		"""
-		TODO:
-		Implement your block detector here.  
-		You will need to locate
-		blocks in 3D space
-		"""
-		image = self.currentVideoFrame
-		image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-		cv2.imwrite("test.jpg",image[:,:,2])
-	
-		pass
-
-	def detectBlocksInDepthImage(self):
-		"""
-		TODO:
-		Implement a blob detector to find blocks
-		in the depth image
-		"""
-		pass
