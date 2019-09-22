@@ -20,6 +20,10 @@ class Kinect():
         self.new_click = False
         self.rgb_click_points = np.zeros((5,2),int)
         self.depth_click_points = np.zeros((5,2),int)
+	self.rotation_matrix = np.zeros((3,3),float)
+	self.translation_matrix = np.zeros((3,1),float)
+	self.intrinsic_matrix = np.zeros((3,3),float)
+	self.intrinsic_matrix_inverse = np.zeros((3,3),float)
 
         """ Extra arrays for colormaping the depth image"""
         self.DepthHSV = np.zeros((480,640,3)).astype(np.uint8)
@@ -176,9 +180,34 @@ class Kinect():
         TODO:
         Load camera intrinsic matrix from file.
         """
-        intrinsic_matrix = np.array([[523.07835767, 0.0,303.93789919],[0.0, 522.81772202, 278.02015252],[0.0, 0.0, 1.0]])
-        return intrinsic_matrix
+        self.intrinsic_matrix = np.array([[523.07835767, 0.0,303.93789919],[0.0, 522.81772202, 278.02015252],[0.0, 0.0, 1.0]])
+	self.intrinsic_matrix_inverse = np.linalg.inv(self.intrinsic_matrix)
+        return self.intrinsic_matrix
     
+    def workspaceTransform(self, coordinates):
+	camera_matrix = self.loadCameraCalibration()
+	dist_coeffs = np.array([[2.81543125e-01,-1.41320279e+00,-1.51367772e-03,4.17417744e-03,2.92511446e+00]]).astype(np.float32)
+	#flags = cv2.CV_ITERATIVE
+	model_points = np.array([[-.3050, -.3050, .9400],[-.3050, .3050, .9400],[.3050, .3050, .9400],[.3050, -.3050, .9400],[0.0, 0.0, .9400]]).astype(np.float32)
+	
+	image_points = []	
+	for coordinate in coordinates:
+		coordinate = np.array([[coordinate[0]],[coordinate[1]],[1]]).astype(np.float32)
+		print("Coordinate : ", coordinate)
+		image_points.append(np.matmul(self.intrinsic_matrix_inverse,coordinate)[:2])
+	image_points = np.array(image_points)
+	print("image points : ",image_points)
+	(success, rot_vec, trans_vec) = cv2.solvePnP(model_points, image_points, camera_matrix,dist_coeffs)
+	self.rotation_matrix = np.array([[0.0, -rot_vec[2], rot_vec[1]],
+				[rot_vec[2], 0.0, -rot_vec[0]],
+				[-rot_vec[1], rot_vec[0], 0.0]])
+	
+	#self.rotation_matrix = rot_vec	
+	self.translation_matrix = trans_vec
+	print(self.rotation_matrix.shape)
+	print(self.translation_matrix.shape)
+	return self.rotation_matrix, self.translation_matrix
+
     def apriltagdetection(self):
 	detector = apriltag.Detector(families='tag36h11', border=1, nthreads=4, quad_decimate=1.0,quad_blur=0.0,refine_edges=True,debug=False,quad_contours=True)
 	image = self.currentVideoFrame	
