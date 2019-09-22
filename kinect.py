@@ -3,6 +3,7 @@ import apriltag
 import numpy as np
 from PyQt4.QtGui import QImage
 import freenect
+import copy
 
 class Kinect():
 	def __init__(self):
@@ -267,25 +268,21 @@ class Kinect():
 			#print(self.currentDepthFrame)
 			self.BlockMask = np.zeros((480,640,1)).astype(np.uint8)
 			self.DepthHSVThreshold[...,0] = self.currentDepthFrame
-			self.DepthHSVThreshold[self.currentDepthFrame > 715 ,0] = 0
+			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,0] = 0
 			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,0] = 0
 			#self.DepthHSVThreshold[...,0] = (self.DepthHSVThreshold[...,0] - 650)*256/65
-			self.BlockMask[self.DepthHSVThreshold[...,0] != 0] = 1
+			self.BlockMask[self.DepthHSVThreshold[...,0] != 0] = 255
 			
 			self.DepthHSVThreshold[...,1] = 0x9F
 			self.DepthHSVThreshold[...,2] = 0xFF
-			self.DepthHSVThreshold[self.currentDepthFrame > 715 ,1] = 0
+			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,1] = 0
 			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,1] = 0
-			self.DepthHSVThreshold[self.currentDepthFrame > 715 ,2] = 0
+			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,2] = 0
 			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,2] = 0
 			self.DepthCMThreshold = cv2.cvtColor(self.DepthHSVThreshold,cv2.COLOR_HSV2RGB)
+			self.blockDetector()
 			cv2.drawContours(self.DepthCMThreshold,self.block_contours,-1,(0,0,0),3)
-			#self.DepthCMThreshold = self.DepthHSVThreshold
-			img = QImage(self.DepthCMThreshold,
-							 self.DepthCMThreshold.shape[1],
-							 self.DepthCMThreshold.shape[0],
-							 QImage.Format_RGB888
-							 )
+			img = QImage(self.DepthCMThreshold, self.DepthCMThreshold.shape[1], self.DepthCMThreshold.shape[0], QImage.Format_RGB888)
 			return img
 		except:
 			return None
@@ -298,19 +295,14 @@ class Kinect():
 		blocks in 3D space
 		"""
 
-		image = self.currentVideoFrame
+		image = self.currentVideoFrame.astype(np.float32)
 		hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
 		hue_image = cv2.bitwise_and(hsv_image[...,0], hsv_image[...,0], mask = self.BlockMask)
 		saturation_image = cv2.bitwise_and(hsv_image[...,1], hsv_image[...,1], mask = self.BlockMask)
 		value_image = cv2.bitwise_and(hsv_image[...,2], hsv_image[...,2], mask = self.BlockMask)
-		cv2.imwrite("hue.jpg",hue_image)
-		cv2.imwrite("saturation.jpg",saturation_image)
-		cv2.imwrite("value.jpg",value_image)
-		
-			
-
-
-	
+		ret, value_threshold = cv2.threshold(value_image.astype(np.uint8),0,10, cv2.THRESH_BINARY)
+		contours=cv2.findContours(value_threshold, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+		self.block_contours = contours[1]
 		pass
 
 	def detectBlocksInDepthImage(self):
