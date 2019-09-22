@@ -37,6 +37,8 @@ class Kinect():
 
 		""" block info """
 		self.block_contours = np.array([])
+		self.block_coordinates = []
+		self.block_coordinates_raw = []
 
 	def captureVideoFrame(self):
 		"""                      
@@ -50,7 +52,7 @@ class Kinect():
 		
 
 	def processVideoFrame(self):
-		cv2.drawContours(self.currentVideoFrame,self.block_contours,-1,(255,0,255),3)
+		cv2.drawContours(self.currentVideoFrame,self.block_contours,-1,(255,0,255),1)
 
 
 	def captureDepthFrame(self):
@@ -100,7 +102,7 @@ class Kinect():
 			self.DepthHSV[...,1] = 0x9F
 			self.DepthHSV[...,2] = 0xFF
 			self.DepthCM = cv2.cvtColor(self.DepthHSV,cv2.COLOR_HSV2RGB)
-			cv2.drawContours(self.DepthCM,self.block_contours,-1,(0,0,0),3)
+			cv2.drawContours(self.DepthCM,self.block_contours,-1,(0,0,0),1)
 
 			img = QImage(self.DepthCM,
 							 self.DepthCM.shape[1],
@@ -275,17 +277,18 @@ class Kinect():
 			
 			self.DepthHSVThreshold[...,1] = 0x9F
 			self.DepthHSVThreshold[...,2] = 0xFF
-			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,1] = 0
-			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,1] = 0
-			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,2] = 0
-			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,2] = 0
+			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,1] = 255
+			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,1] = 255
+			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,2] = 255
+			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,2] = 255
 			self.DepthCMThreshold = cv2.cvtColor(self.DepthHSVThreshold,cv2.COLOR_HSV2RGB)
-			self.blockDetector()
-			cv2.drawContours(self.DepthCMThreshold,self.block_contours,-1,(0,0,0),3)
+			self.detectBlocksInDepthImage()
+			cv2.drawContours(self.DepthCMThreshold,self.block_contours,-1,(0,0,0),1)
 			img = QImage(self.DepthCMThreshold, self.DepthCMThreshold.shape[1], self.DepthCMThreshold.shape[0], QImage.Format_RGB888)
 			return img
 		except:
 			return None
+
 
 	def blockDetector(self):
 		"""
@@ -294,15 +297,33 @@ class Kinect():
 		You will need to locate
 		blocks in 3D space
 		"""
+		#camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
+		#xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
+		#z_w = .1236*np.tan(z/2842.5 + 1.1863) 
+		self.block_coordinates_raw = []
+		self.block_coordinates = []
 
-		image = self.currentVideoFrame.astype(np.float32)
-		hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-		hue_image = cv2.bitwise_and(hsv_image[...,0], hsv_image[...,0], mask = self.BlockMask)
-		saturation_image = cv2.bitwise_and(hsv_image[...,1], hsv_image[...,1], mask = self.BlockMask)
-		value_image = cv2.bitwise_and(hsv_image[...,2], hsv_image[...,2], mask = self.BlockMask)
-		ret, value_threshold = cv2.threshold(value_image.astype(np.uint8),0,10, cv2.THRESH_BINARY)
-		contours=cv2.findContours(value_threshold, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-		self.block_contours = contours[1]
+		font = cv2.FONT_HERSHEY_SIMPLEX
+		fontScale = .5
+		fontColor = (255,255,255)
+		lineType  = 1
+
+		for x in self.block_contours:
+			m = cv2.moments(x)
+			if abs(m["m00"]) >0:
+				cx = int(m["m10"]/m["m00"]) 
+				cy = int(m["m01"]/m["m00"])
+				cz = self.currentDepthFrame[cy][cx]
+				self.block_coordinates_raw.append([cx,cy,cz])
+				camera_coordinates = np.array([[cx],[cy],[1]]).astype(np.float32)
+				xy_world = np.matmul(self.workcamera_affine,camera_coordinates)
+				z_w = .1236*np.tan(cz/2842.5 + 1.1863) 
+				cx_w = xy_world[0] 
+				cy_w = xy_world[1]
+				cz_w = z_w
+				self.block_coordinates.append([cx_w,cy_w,cz_w])
+				location = str(np.round(cx_w[0],3)) +", "+ str(np.round(cy_w[0],3)) +", "+ str(np.round(cz_w,3)) 
+				cv2.putText(self.DepthCMThreshold, location, (cy,cx), font, fontScale, fontColor, lineType)
 		pass
 
 	def detectBlocksInDepthImage(self):
@@ -311,7 +332,19 @@ class Kinect():
 		Implement a blob detector to find blocks
 		in the depth image
 		"""
-		pass
+		self.blockDetector()
+		image = self.currentVideoFrame.astype(np.float32)
+		hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+		hue_image = cv2.bitwise_and(hsv_image[...,0], hsv_image[...,0], mask = self.BlockMask)
+		saturation_image = cv2.bitwise_and(hsv_image[...,1], hsv_image[...,1], mask = self.BlockMask)
+		value_image = cv2.bitwise_and(hsv_image[...,2], hsv_image[...,2], mask = self.BlockMask)
+		ret, value_threshold = cv2.threshold(value_image.astype(np.uint8),0,10, cv2.THRESH_BINARY)
+		contours=cv2.findContours(value_threshold, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+		if len(contours) != 0:  
+			self.block_contours = contours[1]
+
+
+		return None
 
 	def workspaceTransform(self, coordinates):
 		camera_matrix = self.loadCameraCalibration()
