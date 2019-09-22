@@ -38,7 +38,7 @@ DEVICENAME = "/dev/ttyACM0".encode('utf-8')
 
 """Threads"""
 class VideoThread(QThread):
-    updateFrame = pyqtSignal(QImage, QImage)
+    updateFrame = pyqtSignal(QImage, QImage, QImage, QImage)
 
     def __init__(self, kinect, parent=None):
         QThread.__init__(self, parent=parent) 
@@ -50,7 +50,9 @@ class VideoThread(QThread):
             self.kinect.captureDepthFrame()
             rgb_frame = self.kinect.convertFrame()
             depth_frame = self.kinect.convertDepthFrame()
-            self.updateFrame.emit(rgb_frame, depth_frame)
+	    user1_frame = self.kinect.convertGrayFrame()
+	    user2_frame = self.kinect.convertHSVFrame()
+            self.updateFrame.emit(rgb_frame, depth_frame, user1_frame, user2_frame)
             time.sleep(.03)
 
 class LogicThread(QThread):   
@@ -123,6 +125,8 @@ class Gui(QMainWindow):
         self.ui.btn_task2.clicked.connect(self.clear_waypoints) 
         self.ui.btnUser1.setText("Calibrate")
         self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
+	self.ui.btnUser1.setText("Capture Frame")
+        #self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "block detection"))
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
         self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
         self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
@@ -167,12 +171,17 @@ class Gui(QMainWindow):
 
     """ Slots attach callback functions to signals emitted from threads"""
 
-    @pyqtSlot(QImage, QImage)
-    def setImage(self, rgb_image, depth_image):
+    @pyqtSlot(QImage, QImage, QImage, QImage)
+    def setImage(self, rgb_image, depth_image, gray_image, hsv_image):
         if(self.ui.radioVideo.isChecked()):
             self.ui.videoDisplay.setPixmap(QPixmap.fromImage(rgb_image))
         if(self.ui.radioDepth.isChecked()):
             self.ui.videoDisplay.setPixmap(QPixmap.fromImage(depth_image))
+	if(self.ui.radioUsr1.isChecked()):
+            self.ui.videoDisplay.setPixmap(QPixmap.fromImage(gray_image))
+	if(self.ui.radioUsr2.isChecked()):
+            self.ui.videoDisplay.setPixmap(QPixmap.fromImage(hsv_image))
+
 
     @pyqtSlot(list)
     def updateJointReadout(self, joints):
@@ -272,10 +281,15 @@ class Gui(QMainWindow):
             if(self.kinect.currentDepthFrame.any() != 0):			
 		z = self.kinect.currentDepthFrame[y][x]
                	self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" % (x,y,z))
-		x_w = 0
-		y_w = 0
-		z_w = .1236*np.tan(z/2842.5 + 1.1863)
-		self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.0f)" % (x_w,y_w,z_w))
+		camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
+		#xy_image = np.matmul(self.kinect.intrinsic_matrix_inverse, camera_coordinates)	
+		#xy_world = np.matmul(self.kinect.rotation_matrix,xy_image) #+ self.kinect.translation_matrix
+		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
+		z_w = .1236*np.tan(z/2842.5 + 1.1863) 
+		if self.kinect.kinectCalibrated == True:	
+			#print("World coordinates : ", camera_coordinates,xy_world,z_w)
+			pass
+		self.ui.rdoutMouseWorld.setText("(%.2f,%.2f,%.2f)" % (xy_world[0], xy_world[1], z_w))
 
     def mousePressEvent(self, QMouseEvent):
         """ 

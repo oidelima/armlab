@@ -62,6 +62,8 @@ class StateMachine():
                 self.calibrate()
             if(self.next_state == "execute"):
                 self.execute()
+	    if(self.next_state == "block detection"):
+		self.block_detection()
         
         if(self.current_state == "record"):
             self.prev_state = "record"
@@ -69,7 +71,6 @@ class StateMachine():
                 self.manual()
             if(self.next_state == "record"):
                 self.record()
-            
                 
         if(self.current_state == "estop"):
             self.prev_state = "estop"
@@ -129,7 +130,10 @@ class StateMachine():
         print("Waypoint: ", self.waypoints)
         self.set_next_state("manual")
 
-   
+    def block_detection(self):
+	self.current_state = "block detection"
+	self.kinect.blockDetector()
+	self.set_next_state("idle")
 
         
     def calibrate(self):
@@ -174,7 +178,8 @@ class StateMachine():
 	
         """TODO Perform camera calibration here"""
         affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
-
+	#print(self.kinect.workspaceTransform(self.kinect.rgb_click_points))
+	self.kinect.affineworkspace(self.kinect.rgb_click_points)
 	self.kinect.kinectCalibrated = True
         self.status_message = "Calibration - Completed Calibration"
         time.sleep(1)
