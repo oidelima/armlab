@@ -1,5 +1,5 @@
 import cv2
-import apriltag
+from apriltag import apriltag
 import numpy as np
 from PyQt4.QtGui import QImage
 import freenect
@@ -9,6 +9,9 @@ class Kinect():
 	def __init__(self):
 		self.currentVideoFrame = np.array([])
 		self.currentDepthFrame = np.array([])
+		self.currentHiResFrame = np.array([])
+		freenect.sync_set_autoexposure(False)
+		freenect.sync_set_whitebalance(False)
 		if(freenect.sync_get_depth() == None):
 			self.kinectConnected = False
 		else:
@@ -28,6 +31,9 @@ class Kinect():
 
 		""" Extra arrays for colormaping the depth image"""
 		self.DepthHSV = np.zeros((480,640,3)).astype(np.uint8)
+		self.DepthH = np.zeros((480,640,3)).astype(np.uint8)
+		self.DepthS = np.zeros((480,640,3)).astype(np.uint8)
+		self.DepthV = np.zeros((480,640,3)).astype(np.uint8)
 		self.DepthCM=np.array([])
 
 		# Block Depth Isolation
@@ -46,6 +52,7 @@ class Kinect():
 		"""
 		if(self.kinectConnected):
 			self.currentVideoFrame = freenect.sync_get_video()[0]
+			#self.currentHiResFrame = freenect.sync_get_video_with_res()[0]
 		else:
 			self.loadVideoFrame()
 		self.processVideoFrame()
@@ -232,12 +239,23 @@ class Kinect():
 		return self.workcamera_affine
 
 	def apriltagdetection(self):
-		detector = apriltag.Detector(families='tag36h11', border=1, nthreads=4, quad_decimate=1.0,quad_blur=0.0,refine_edges=True,debug=False,quad_contours=True)
-		image = self.currentVideoFrame	
+		detector = apriltag("tagStandard41h12", threads=4, decimate=1.0)
+		object_points = np.array([[-0.028,-0.028,0.0],
+								  [0.028, -0.028, 0.0],
+								  [0.028, 0.028, 0.0],
+								  [-0.028, 0.028, 0.0]],dtype = "double")
+
+		image = freenect.sync_get_video_with_res(resolution=freenect.RESOLUTION_HIGH)[0]
 		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-		print(image)
-		detections = detector.detect(image)
-		print detections
+		detections = detector.detect(image)		
+		for tag in detections:
+			print("taging ", tag['id'])
+			image_points = tag['lb-rb-rt-lt']
+			print("Translation matrix : ",self.workspaceTransform(object_points, image_points))
+
+
+
+
 
 	def convertGrayFrame(self):
 		""" Converts frame to format to Gray for Qt  """
@@ -252,8 +270,24 @@ class Kinect():
 		""" Converts frame to format to HSV for Qt  """
 		try:
 			image = cv2.cvtColor(self.currentVideoFrame, cv2.COLOR_RGB2HSV)
-			img = QImage(image[:][:][0], image.shape[1], image.shape[0], QImage.Format_RGB888)
-			return img
+			self.DepthH[...,0] = image[...,0]
+			self.DepthH[...,1] = image[...,0]
+			self.DepthH[...,2] = image[...,0]
+			self.DepthH = cv2.cvtColor(self.DepthH,cv2.COLOR_HSV2RGB)
+			img_h = QImage(self.DepthH, self.DepthH.shape[1], self.DepthH.shape[0], QImage.Format_RGB888)
+
+			self.DepthS[...,0] = image[...,1]
+			self.DepthS[...,1] = image[...,1]
+			self.DepthS[...,2] = image[...,1]
+			self.DepthS = cv2.cvtColor(self.DepthS,cv2.COLOR_HSV2RGB)
+			img_s = QImage(self.DepthS, self.DepthS.shape[1], self.DepthS.shape[0], QImage.Format_RGB888)
+
+			self.DepthV[...,0] = image[...,2]
+			self.DepthV[...,1] = image[...,2]
+			self.DepthV[...,2] = image[...,2]
+			self.DepthV = cv2.cvtColor(self.DepthV,cv2.COLOR_HSV2RGB)
+			img_v = QImage(self.DepthV, self.DepthV.shape[1], self.DepthV.shape[0], QImage.Format_RGB888)
+			return img_h,img_s,img_v
 		except:
 			return None
 
@@ -346,24 +380,15 @@ class Kinect():
 
 		return None
 
-	def workspaceTransform(self, coordinates):
-		camera_matrix = self.loadCameraCalibration()
+	def workspaceTransform(self, object_points, image_points):
+		camera_intrinsic_matrix = self.loadCameraCalibration()
 		dist_coeffs = np.array([[2.81543125e-01,-1.41320279e+00,-1.51367772e-03,4.17417744e-03,2.92511446e+00]]).astype(np.float32)
-	#flags = cv2.CV_ITERATIVE
-		model_points = np.array([[-.3050, .3050, .9400],[-.3050, -.3050, .9400],[.3050, -.3050, .9400],[.3050, .3050, .9400],[0.0, 0.0, .9400]]).astype(np.float32)
-	
-		image_points = []	
-		for coordinate in coordinates:
-			coordinate = np.array([[coordinate[0]],[coordinate[1]],[1]]).astype(np.float32)
-			print("Coordinate : ", coordinate)
-			image_points.append(np.matmul(self.intrinsic_matrix_inverse,coordinate)[:2])
-		image_points = np.array(image_points)
-		print("image points : ",image_points)
-		(success, rot_vec, trans_vec) = cv2.solvePnP(model_points, image_points, camera_matrix,dist_coeffs)
+		(success, rot_vec, trans_vec) = cv2.solvePnP(object_points, image_points, camera_intrinsic_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 		self.rotation_matrix = np.array([[0.0, -rot_vec[2], rot_vec[1]],
-				[rot_vec[2], 0.0, -rot_vec[0]],
-				[-rot_vec[1], rot_vec[0], 0.0]])
+										[rot_vec[2], 0.0, -rot_vec[0]],
+										[-rot_vec[1], rot_vec[0], 0.0]])
 	
 	#self.rotation_matrix = rot_vec	
 		self.translation_matrix = trans_vec
-		return self.rotation_matrix, self.translation_matrix
+		#return self.rotation_matrix, self.translation_matrix
+		return trans_vec

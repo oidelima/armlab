@@ -36,11 +36,11 @@ MAX_Y = 520
 
 """ Serial Port Parameters"""
 BAUDRATE   = 1000000
-DEVICENAME = "/dev/ttyACM1".encode('utf-8')
+DEVICENAME = "/dev/ttyACM0".encode('utf-8')
 
 """Threads"""
 class VideoThread(QThread):
-	updateFrame = pyqtSignal(QImage, QImage, QImage, QImage)
+	updateFrame = pyqtSignal(QImage, QImage, QImage, QImage, QImage, QImage)
 
 	def __init__(self, kinect, parent=None):
 		QThread.__init__(self, parent=parent) 
@@ -54,7 +54,7 @@ class VideoThread(QThread):
 			depth_frame = self.kinect.convertDepthFrame()
 			block_depth_frame = self.kinect.convertBlockDepthFrame()
 			hsv_frame = self.kinect.convertHSVFrame()
-			self.updateFrame.emit(rgb_frame, depth_frame, block_depth_frame, hsv_frame)
+			self.updateFrame.emit(rgb_frame, depth_frame, block_depth_frame, hsv_frame[0], hsv_frame[1], hsv_frame[2])
 
 class LogicThread(QThread):   
 	def __init__(self, state_machine, parent=None):
@@ -172,8 +172,8 @@ class Gui(QMainWindow):
 
 	""" Slots attach callback functions to signals emitted from threads"""
 
-	@pyqtSlot(QImage, QImage, QImage, QImage)
-	def setImage(self, rgb_image, depth_image, blocks_depth_image, hsv_image):
+	@pyqtSlot(QImage, QImage, QImage, QImage, QImage, QImage)
+	def setImage(self, rgb_image, depth_image, blocks_depth_image, h_image, s_image, v_image):
 		if(self.ui.radioVideo.isChecked()):
 			self.ui.videoDisplay.setPixmap(QPixmap.fromImage(rgb_image))
 		if(self.ui.radioDepth.isChecked()):
@@ -181,7 +181,12 @@ class Gui(QMainWindow):
 		if(self.ui.radioUsr1.isChecked()):
 			self.ui.videoDisplay.setPixmap(QPixmap.fromImage(blocks_depth_image))
 		if(self.ui.radioUsr2.isChecked()):
-			self.ui.videoDisplay.setPixmap(QPixmap.fromImage(hsv_image))
+			self.ui.videoDisplay.setPixmap(QPixmap.fromImage(h_image))
+		if(self.ui.radioUsr3.isChecked()):
+			self.ui.videoDisplay.setPixmap(QPixmap.fromImage(s_image))
+		if(self.ui.radioUsr4.isChecked()):
+			self.ui.videoDisplay.setPixmap(QPixmap.fromImage(v_image))
+
 
 	@pyqtSlot(list)
 	def updateJointReadout(self, joints):

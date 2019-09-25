@@ -78,17 +78,19 @@ def FK_dh(joint_angles, link):
 
 
 def kf_test():
-    print("Elbow at 90 deg gives: ", np.matmul(FK_dh([0,0,math.pi/2,0,0], 4), np.array([0,0,0,1]))) # elbow at 90
-    print("Elbow at -90 deg gives: ", np.matmul(FK_dh([0,0,-math.pi/2,0,0], 4), np.array([0,0,0,1]))) # elbow at -90
-    print("Elbow at 45 deg gives: ", np.matmul(FK_dh([0,0,math.pi/4,0,0], 4), np.array([0,0,0,1]))) # elbow at 45
-    print("Elbow at -45 deg gives: ", np.matmul(FK_dh([0,0,-math.pi/4,0,0], 4), np.array([0,0,0,1]))) # elbow at -45
-    print("Shoulder at 90 deg gives: ", np.matmul(FK_dh([0,math.pi/2,0, 0,0], 4), np.array([0,0,0,1]))) # shoulder at 90
-    print("Shoulder at -90 deg gives: ", np.matmul(FK_dh([0,-math.pi/2,0,0,0], 4), np.array([0,0,0,1]))) # shoulder at -90
-    print("Shoulder at 45 deg gives: ", np.matmul(FK_dh([0,math.pi/4,0,0,0], 4), np.array([0,0,0,1]))) # shoulder at 45
-    print("Shoulder at -45 deg gives: ", np.matmul(FK_dh([0,-math.pi/4,0,0,0], 4), np.array([0,0,0,1]))) # shoulder at -45
-    print("Shoulder at -45 deg, base at 90, elboow at -45 gives: ", np.matmul(FK_dh([math.pi/2,-math.pi/4,-math.pi/4,0,0], 4), np.array([0,0,0,1]))) # shoulder at -45
+	pass
 
-kf_test()
+    #print("Elbow at 90 deg gives: ", np.matmul(FK_dh([0,0,math.pi/2,0,0], 4), np.array([0,0,0,1]))) # elbow at 90
+    #print("Elbow at -90 deg gives: ", np.matmul(FK_dh([0,0,-math.pi/2,0,0], 4), np.array([0,0,0,1]))) # elbow at -90
+    #print("Elbow at 45 deg gives: ", np.matmul(FK_dh([0,0,math.pi/4,0,0], 4), np.array([0,0,0,1]))) # elbow at 45
+    #print("Elbow at -45 deg gives: ", np.matmul(FK_dh([0,0,-math.pi/4,0,0], 4), np.array([0,0,0,1]))) # elbow at -45
+    #print("Shoulder at 90 deg gives: ", np.matmul(FK_dh([0,math.pi/2,0, 0,0], 4), np.array([0,0,0,1]))) # shoulder at 90
+    #print("Shoulder at -90 deg gives: ", np.matmul(FK_dh([0,-math.pi/2,0,0,0], 4), np.array([0,0,0,1]))) # shoulder at -90
+    #print("Shoulder at 45 deg gives: ", np.matmul(FK_dh([0,math.pi/4,0,0,0], 4), np.array([0,0,0,1]))) # shoulder at 45
+    #print("Shoulder at -45 deg gives: ", np.matmul(FK_dh([0,-math.pi/4,0,0,0], 4), np.array([0,0,0,1]))) # shoulder at -45
+    #print("Shoulder at -45 deg, base at 90, elboow at -45 gives: ", np.matmul(FK_dh([math.pi/2,-math.pi/4,-math.pi/4,0,0], 4), np.array([0,0,0,1]))) # shoulder at -45
+
+#kf_test()
 
 def FK_pox(joint_angles):
     """
