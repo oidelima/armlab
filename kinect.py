@@ -189,7 +189,7 @@ class Kinect():
 		TODO:
 		Load camera intrinsic matrix from file.
 		"""
-		self.intrinsic_matrix = np.array([[523.07835767, 0.0,303.93789919],[0.0, 522.81772202, 278.02015252],[0.0, 0.0, 1.0]])
+		self.intrinsic_matrix = np.array([[492.43967452, 0.0, 305.98100007],[0.0, 492.06649804, 286.20904428],[0.0, 0.0, 1.0]])
 		self.intrinsic_matrix_inverse = np.linalg.inv(self.intrinsic_matrix)
 		return self.intrinsic_matrix
 	
@@ -239,19 +239,21 @@ class Kinect():
 		return self.workcamera_affine
 
 	def apriltagdetection(self):
-		detector = apriltag("tagStandard41h12", threads=4, decimate=1.0)
-		object_points = np.array([[-0.028,-0.028,0.0],
-								  [0.028, -0.028, 0.0],
-								  [0.028, 0.028, 0.0],
-								  [-0.028, 0.028, 0.0]],dtype = "double")
+		detector = apriltag("tagStandard41h12", threads=4, decimate=2.0)
+		object_points = np.array([[-0.014,-0.014,0.0],
+								  [0.014, -0.014, 0.0],
+								  [0.014, 0.014, 0.0],
+								  [-0.014, 0.014, 0.0]],dtype = "double")
 
 		image = freenect.sync_get_video_with_res(resolution=freenect.RESOLUTION_HIGH)[0]
 		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 		detections = detector.detect(image)		
+		print("april tagging")
+
 		for tag in detections:
-			print("taging ", tag['id'])
+			print("\ntag ", tag)
 			image_points = tag['lb-rb-rt-lt']
-			print("Translation matrix : ",self.workspaceTransform(object_points, image_points))
+			print("\nTranslation matrix : ",self.workspaceTransform(object_points, image_points))
 
 
 
@@ -382,7 +384,7 @@ class Kinect():
 
 	def workspaceTransform(self, object_points, image_points):
 		camera_intrinsic_matrix = self.loadCameraCalibration()
-		dist_coeffs = np.array([[2.81543125e-01,-1.41320279e+00,-1.51367772e-03,4.17417744e-03,2.92511446e+00]]).astype(np.float32)
+		dist_coeffs = np.array([[0.4799379,-0.94025256,  0.00780928,  0.00295796, -0.06855816]]).astype(np.float32)
 		(success, rot_vec, trans_vec) = cv2.solvePnP(object_points, image_points, camera_intrinsic_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
 		self.rotation_matrix = np.array([[0.0, -rot_vec[2], rot_vec[1]],
 										[rot_vec[2], 0.0, -rot_vec[0]],
