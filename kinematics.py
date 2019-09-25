@@ -15,6 +15,7 @@ L2 = 99.2
 L3 = 66.9
 L4 = 41.9
 L5 = 55
+L6 = 107
 
 def FK_dh(joint_angles, link):
     """
@@ -105,7 +106,7 @@ def FK_pox(joint_angles):
     """
     pass
 
-def IK(pose):
+def IK(o , R):
     """
     TODO: implement this function
 
@@ -114,7 +115,28 @@ def IK(pose):
     return the required joint angles
 
     """
-    pass
+    oc = np.array([[o[0]-L6*R[0][2]], [o[1] - L6*R[1][2]], [o[2] - L6*R[2][2]]])
+    theta1 = math.atan2(oc[1], oc[0])
+    theta3 = math.acos((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - L3**2 - L2**2)/(2*L3*L2))
+    theta2 = math.atan2(oc[2]-L1, math.sqrt(oc[0]**2 + oc[1]**2)) - math.atan2(L3*math.sin(theta3), L2 + L3*math.cos(theta3))
+
+    R03 = np.array([[math.cos(theta1)*math.cos(theta2)*math.cos(theta3),
+                    -math.cos(theta1)*math.sin(theta2)*math.sin(theta3),
+                    math.sin(theta1)],
+                   [math.sin(theta1)*math.cos(theta2)*math.cos(theta3),
+                   -math.sin(theta1)*math.sin(theta2)*math.sin(theta3),
+                    -math.cos(theta1)],
+                   [math.sin(theta2)*math.sin(theta3),
+                    math.cos(theta2)*math.cos(theta3),
+                    0]])
+
+    R36 = np.matmul(np.transpose(R03),R)
+    theta4 = math.atan(R36[1][2], R36[0][2])
+    theta5 = math.atan(math.sqrt(1 - R36[2][2]**2), R36[2][2])
+    theta6 = math.atan(R36[2][1], - R[2][0])
+
+    return [theta1, theta2, theta3, theta4, theta5, theta6]
+
 
 
 def get_euler_angles_from_T(T):
