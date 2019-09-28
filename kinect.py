@@ -1,5 +1,5 @@
 import cv2
-from apriltag import apriltag
+#from apriltag import apriltag
 import numpy as np
 from PyQt4.QtGui import QImage
 import freenect
@@ -10,8 +10,8 @@ class Kinect():
 		self.currentVideoFrame = np.array([])
 		self.currentDepthFrame = np.array([])
 		self.currentHiResFrame = np.array([])
-		freenect.sync_set_autoexposure(False)
-		freenect.sync_set_whitebalance(False)
+		#freenect.sync_set_autoexposure(False)
+		#freenect.sync_set_whitebalance(False)
 		if(freenect.sync_get_depth() == None):
 			self.kinectConnected = False
 		else:
@@ -238,22 +238,22 @@ class Kinect():
 		self.workcamera_affine = vector_x.reshape(2,3)
 		return self.workcamera_affine
 
-	def apriltagdetection(self):
-		detector = apriltag("tagStandard41h12", threads=4, decimate=2.0)
-		object_points = np.array([[-0.014,-0.014,0.0],
-								  [0.014, -0.014, 0.0],
-								  [0.014, 0.014, 0.0],
-								  [-0.014, 0.014, 0.0]],dtype = "double")
+	# def apriltagdetection(self):
+	# 	detector = apriltag("tagStandard41h12", threads=4, decimate=2.0)
+	# 	object_points = np.array([[-0.014,-0.014,0.0],
+	# 							  [0.014, -0.014, 0.0],
+	# 							  [0.014, 0.014, 0.0],
+	# 							  [-0.014, 0.014, 0.0]],dtype = "double")
 
-		image = freenect.sync_get_video_with_res(resolution=freenect.RESOLUTION_HIGH)[0]
-		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-		detections = detector.detect(image)		
-		#print("april tagging")
+	# 	image = freenect.sync_get_video_with_res(resolution=freenect.RESOLUTION_HIGH)[0]
+	# 	image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+	# 	detections = detector.detect(image)		
+	# 	#print("april tagging")
 
-		for tag in detections:
-			#print("\ntag ", tag)
-			image_points = tag['lb-rb-rt-lt']
-			#print("\nTranslation matrix : ",self.workspaceTransform(object_points, image_points))
+	# 	for tag in detections:
+	# 		#print("\ntag ", tag)
+	# 		image_points = tag['lb-rb-rt-lt']
+	# 		#print("\nTranslation matrix : ",self.workspaceTransform(object_points, image_points))
 
 
 

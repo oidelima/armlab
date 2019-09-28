@@ -85,8 +85,6 @@ class StateMachine():
 				self.manual()
 
 	"""Functions run for each state"""
-
-
 	def manual(self):
 		self.status_message = "State: Manual - Use sliders to control arm"
 		self.current_state = "manual"
@@ -107,13 +105,17 @@ class StateMachine():
 	def execute(self):
 		self.status_message = "Executing ..."
 		self.current_state = "execute"
-		self.rexarm.get_feedback()
-		print("Execute: ",self.waypoints)
 		for i in range(len(self.waypoints)):
-			print("Looking for polynomial")
 			[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), self.waypoints[i], 4)
-
 			self.tp.execute_plan([q,v])
+		
+		#print("Going to waypoint :", self.waypoints[0])
+		#self.rexarm.set_positions(self.waypoints.pop(0))
+		
+		for waypoint in self.waypoints:
+			print("Waypoint : ",waypoint)
+			self.rexarm.set_positions(waypoint)
+			self.rexarm.pause(2)
 
 		if self.prev_state == "manual":
 			self.set_next_state("manual")
@@ -122,13 +124,9 @@ class StateMachine():
 		
 
 	def record(self):
-		
 		self.current_state = "record"
-		#print("get positions : ",self.rexarm.get_positions())
 		self.waypoints.append(self.rexarm.get_positions()[:]) 
 		self.status_message = "Recording waypoint: " + str(self.rexarm.get_positions())
-		#print(self.rexarm.get_positions())
-		#print("Waypoint: ", self.waypoints)
 		self.set_next_state("manual")
 
 	def block_detection(self):
@@ -139,7 +137,6 @@ class StateMachine():
 		
 	def calibrate(self):
 		self.current_state = "calibrate"
-		#self.next_state = "idle"
 		if self.prev_state == "manual":
 			self.set_next_state("manual")
 		else:
@@ -172,12 +169,9 @@ class StateMachine():
 					i = i + 1
 					self.kinect.new_click = False
 
-		#print(self.kinect.rgb_click_points)
-		#print(self.kinect.depth_click_points)
-		#self.kinect.apriltagdetection()
 		"""TODO Perform camera calibration here"""
 		affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
-	#print(self.kinect.workspaceTransform(self.kinect.rgb_click_points))
+
 		self.kinect.affineworkspace(self.kinect.rgb_click_points)
 		self.kinect.kinectCalibrated = True
 		self.status_message = "Calibration - Completed Calibration"
