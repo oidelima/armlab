@@ -57,6 +57,7 @@ def FK_dh(joint_angles, link):
     # al6 = dh_t[5,1]
 
     θ = [ 0.0, dh_t[0,3], dh_t[1,3], dh_t[2,3], dh_t[3,3], dh_t[4,3], dh_t[5,3]]
+    
     α = [ 0.0, dh_t[0,1], dh_t[1,1], dh_t[2,1], dh_t[3,1], dh_t[4,1], dh_t[5,1]]
 
     A1 = np.array([[ cos(θ[1]), - sin(θ[1]) * cos(α[1]),   sin(θ[1]) * sin(α[1]),          0],
@@ -139,9 +140,13 @@ def IK(o , R):
     
     oc = np.array([[o[0] - (links[6]+links[5])*R[0][2]], [o[1] - (links[6] + links[5])*R[1][2]], [o[2] - (links[6] + links[5])*R[2][2]]])
     oc.round(4)
+    
     θ1 = atan2(oc[0], oc[1]) + pi #two possibilities
+    
     θ3 =  -acos((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2)) #two possibilities
+    
     θ2 = pi/2 - (atan2(oc[2]-L1, sqrt(oc[0]**2 + oc[1]**2)) - atan2((L3+L4)*sin(θ3), L2 + (L3+L4)*cos(θ3))) #two possibilities because of θ 3
+    
     θ1 = round(θ1, 6)
 
 
@@ -154,7 +159,9 @@ def IK(o , R):
     R36 = np.matmul(R03.transpose(),R)
 
     θ4 = atan2(R36[1][2], R36[0][2])
+    
     θ5 = atan2(sqrt(1 - R36[2][2]**2), R36[2][2])
+    
     θ6 = atan2(R36[2][1], - R[2][0])
 
     return [θ1, θ2, θ3, θ4, θ5, θ6]
@@ -220,12 +227,16 @@ def get_euler_angles_from_T(T):
     return (θ, φ, ψ) 
 
 def get_pose_from_T(T):
-    """
-    TODO: implement this function
-    return the joint pose from a T matrix
-    of the form (x,y,z,phi) where phi is rotation about base frame y-axis
-    
-    """
+    """ TODO: return the joint pose from a T matrix of the form (x,y,z,phi) where phi is rotation about base frame y-axis """
+    x = T[0]
+    y = T[1]
+    z = T[2]
+    φ = T[3]
+
+    matrix = np.array([[ cos(φ), 0, sin(φ), x],
+                       [      0, 1,      0, y],
+                       [-sin(φ), 0, cos(φ), z],
+                       [      0, 0,      0, 1]])
     pass
 
 
