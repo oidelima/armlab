@@ -198,7 +198,7 @@ class Kinect():
 		pts2 = np.array([[-.305, .305],[-.3050, -.3050],[.3050, -.3050],[.3050, .3050],[0.0, 0.0]]).astype(np.float32)
 	### coord1 are RGB coordinates and coord2 are Depth Camera coordinates
 		pts1 = coordinates[0:5].astype(np.float32)
-		print("point s: ",pts1)
+		#print("point s: ",pts1)
 	### Defining Affine Matrix components in vector_x, RGB coordinates in matrix A, and Depth Coordinates in vector_b
 		vector_x = np.ones((8,1))
 	
@@ -248,12 +248,12 @@ class Kinect():
 		image = freenect.sync_get_video_with_res(resolution=freenect.RESOLUTION_HIGH)[0]
 		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 		detections = detector.detect(image)		
-		print("april tagging")
+		#print("april tagging")
 
 		for tag in detections:
-			print("\ntag ", tag)
+			#print("\ntag ", tag)
 			image_points = tag['lb-rb-rt-lt']
-			print("\nTranslation matrix : ",self.workspaceTransform(object_points, image_points))
+			#print("\nTranslation matrix : ",self.workspaceTransform(object_points, image_points))
 
 
 

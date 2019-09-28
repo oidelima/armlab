@@ -110,6 +110,7 @@ class StateMachine():
 		self.rexarm.get_feedback()
 		print("Execute: ",self.waypoints)
 		for i in range(len(self.waypoints)):
+			print("Looking for polynomial")
 			[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), self.waypoints[i], 4)
 
 			self.tp.execute_plan([q,v])
@@ -123,11 +124,11 @@ class StateMachine():
 	def record(self):
 		
 		self.current_state = "record"
-		print("get positions : ",self.rexarm.get_positions())
+		#print("get positions : ",self.rexarm.get_positions())
 		self.waypoints.append(self.rexarm.get_positions()[:]) 
 		self.status_message = "Recording waypoint: " + str(self.rexarm.get_positions())
-		print(self.rexarm.get_positions())
-		print("Waypoint: ", self.waypoints)
+		#print(self.rexarm.get_positions())
+		#print("Waypoint: ", self.waypoints)
 		self.set_next_state("manual")
 
 	def block_detection(self):
@@ -171,9 +172,9 @@ class StateMachine():
 					i = i + 1
 					self.kinect.new_click = False
 
-		print(self.kinect.rgb_click_points)
-		print(self.kinect.depth_click_points)
-		self.kinect.apriltagdetection()
+		#print(self.kinect.rgb_click_points)
+		#print(self.kinect.depth_click_points)
+		#self.kinect.apriltagdetection()
 		"""TODO Perform camera calibration here"""
 		affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
 	#print(self.kinect.workspaceTransform(self.kinect.rgb_click_points))

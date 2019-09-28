@@ -41,13 +41,16 @@ class TrajectoryPlanner():
         a = np.zeros((len(initial_wp), 6))
         for joint_num in range(len(initial_wp)):
             M = np.array([[1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0], [0, 0, 2, 0, 0, 0],
-            [1, T, T**2, T**3, T**4, T**5], [0, 1, 2*T, 3*T**2, 4*T**3, 5*T**4], 
-            [0, 0, 2, 6*T, 12*T**2, 20*T**3]])
+                          [1, T, T**2, T**3, T**4, T**5], [0, 1, 2*T, 3*T**2, 4*T**3, 5*T**4], 
+                          [0, 0, 2, 6*T, 12*T**2, 20*T**3]])
+            
             b = np.array([initial_wp[joint_num], 0, 0, final_wp[joint_num], 0, 0])
             a[joint_num] = np.matmul(np.linalg.inv(M),b)
+        
         t = np.linspace(0,T, num = T//self.dt)
         q = np.zeros((len(t),len(initial_wp)))
         v = np.zeros((len(t),len(initial_wp)))
+        
         for time in range(len(t)):
             q[time]= [a[i][0]+a[i][1]*t[time]+a[i][2]*t[time]**2+a[i][3]*t[time]**3+a[i][4]*t[time]**4+a[i][5]*t[time]**5 for i in range(len(initial_wp))]           
             v[time]= [a[i][1]+2*a[i][2]*t[time]+3*a[i][3]*t[time]**2+4*a[i][4]*t[time]**3 + 5*a[i][5]*t[time]**4 for i in range(len(initial_wp))]

@@ -10,6 +10,7 @@ There are some functions to start with, you may need to implement a few more
 """
 
 #link lengths in mm
+links = []
 L1 = 41.38
 L2 = 99.2
 L3 = 66.9
@@ -30,9 +31,9 @@ def FK_dh(joint_angles, link):
 
     """
     dhtable = np.array([[0, math.pi/2, L1, math.pi/2+joint_angles[0]], 
-          [L2, 0, 0, math.pi/2+joint_angles[1]],
-          [0, math.pi/2, 0, math.pi/2+joint_angles[2]],
-          [0, math.pi/2, L3+L4, math.pi + joint_angles[3]]])
+                        [L2, 0, 0, math.pi/2+joint_angles[1]],
+                        [0, math.pi/2, 0, math.pi/2+joint_angles[2]],
+                        [0, math.pi/2, L3+L4, math.pi + joint_angles[3]]])
 
     #link thetas
     th1 = dhtable[0,3];
