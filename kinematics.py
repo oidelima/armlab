@@ -141,7 +141,13 @@ def IK(o , R):
 	oc = np.round(np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]]),6)
 
 	theta1 = atan2(oc[1], oc[0])  #two possibilities
-	theta3 = acos(np.round((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2), 4)) #two possibilities
+	print(np.round((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2), 4))
+	try:
+		theta3 = acos(np.round((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2), 4)) #two possibilities
+	except:
+		print("Location and orientation not reacheable!")
+		return 0.0
+
 	theta2 = pi/2 - (atan2(oc[2]-L1, sqrt(oc[0]**2 + oc[1]**2)) - atan2((L3+L4)*sin(-theta3), L2 + (L3+L4)*cos(-theta3))) #two possibilities because of theta 3
 
 	R03 = FK_dh([theta1, theta2, theta3, 0, 0, 0], 3)[0:3, 0:3]
@@ -252,6 +258,83 @@ def ik_test():
 	R = Rfull[0:3, 0:3]
 	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
 	print("Elbow at 90 gives,W1 At -45 W2 at 90 W3 at 45: ", IK(o, R))
+
+	#Real world tests
+
+	angles = np.zeros((15, 6))
+
+	#LEVEL1
+
+	# Block at 166.57, -55.87, 17.27 with same orientation as frame 0
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([166.57, -55.87, 17.27-L1])
+	angles[0] = IK(o, R)
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([-6.28, -180, 17.27 - L1])
+	angles[1] = IK(o, R)
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([154.82, -101.84, 17.27 - L1])
+	angles[2] = IK(o, R)
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([-118.14, 150.83, 17.27 - L1])
+	angles[3] = IK(o, R)
+
+	"""
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([202.2, 136.45, 17.27 - L1])
+	angles[4] = IK(o, R)"""
+
+	#LEVEL2
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([166.57, -55.87, 17.27*2 - L1])
+	angles[5] = IK(o, R)
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([-6.28, -180, 17.27*2 - L1])
+	angles[6] = IK(o, R)
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([154.82, -101.84, 17.27*2 - L1])
+	angles[7] = IK(o, R)
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([-118.14, 150.83, 17.27*2 - L1])
+	angles[8] = IK(o, R)
+
+	"""R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([202.2, 136.45, 17.27*2 - L1])
+	angles[9] = IK(o, R)"""
+
+	#LEVEL3
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([166.57, -55.87, 17.27*3 - L1])
+	angles[10] = IK(o, R)
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([-6.28, -180, 17.27*3 - L1])
+	angles[11] = IK(o, R)
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([154.82, -101.84, 17.27*3 - L1])
+	angles[12] = IK(o, R)
+
+	R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([-118.14, 150.83, 17.27*3 - L1])
+	angles[13] = IK(o, R)
+
+	"""R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
+	o = np.array([202.2, 136.45, 17.27*3 - L1])
+	angles[14] = IK(o, R)"""
+
+	print(repr(angles))
+
+	#np.array([-0.3236224698458238, 0.7909097090161495, 1.0645475046976332, -8.171687760688562e-17, 1.2861354398760108, -0.32362246984582393],
+	#		 )
 
 ik_test()
 
