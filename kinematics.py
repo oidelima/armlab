@@ -33,14 +33,13 @@ def FK_dh(joint_angles, link):
 	note: phi is the euler angle about the y-axis in the base frame
 
 	# """
-	# dh_t = np.array([[     0.0, pi/2,            links[1], pi/2 + joint_angles[0]], 
-	# 				 [links[2],  0.0,                 0.0, pi/2 + joint_angles[1]],
-	# 				 [     0.0, pi/2,                 0.0, pi/2 + joint_angles[2]],
-	# 				 [     0.0, pi/2, links[3] + links[4], pi/1 + joint_angles[3]],
-	# 				 [     0.0, pi/2,                 0.0, pi/1 + joint_angles[4]],
-	# 				 [     0.0,  0.0, links[5] + links[6],        joint_angles[5]]])
+	dh_t = np.array([[     0.0, pi/2,            links[1], pi/2 + joint_angles[0]], 
+					 [links[2],  0.0,                 0.0, pi/2 + joint_angles[1]],
+					 [     0.0, pi/2,                 0.0, pi/2 + joint_angles[2]],
+					 [     0.0, pi/2, links[3] + links[4], pi/1 + joint_angles[3]],
+					 [     0.0, pi/2,                 0.0, pi/1 + joint_angles[4]],
+					 [     0.0,  0.0, links[5] + links[6],        joint_angles[5]]])
 
-	# thetas= [ 0.0, dh_t[0,3], dh_t[1,3], dh_t[2,3], dh_t[3,3], dh_t[4,3], dh_t[5,3]]
 	
 	# th1 = dh_t[0,3]
 	# th2 = dh_t[1,3]
@@ -49,7 +48,7 @@ def FK_dh(joint_angles, link):
 	# th5 = dh_t[4,3]
 	# th6 = dh_t[5,3]
 
-	#alphas = [ 0.0, dh_t[0,1], dh_t[1,1], dh_t[2,1], dh_t[3,1], dh_t[4,1], dh_t[5,1]]
+
 	# al1 = dh_t[0,1]
 	# al2 = dh_t[1,1]
 	# al3 = dh_t[2,1]
@@ -57,53 +56,53 @@ def FK_dh(joint_angles, link):
 	# al5 = dh_t[4,1]
 	# al6 = dh_t[5,1]
 
-	# thetas = [ 0.0, dh_t[0,3], dh_t[1,3], dh_t[2,3], dh_t[3,3], dh_t[4,3], dh_t[5,3]]
+	thetas = [ 0.0, dh_t[0,3], dh_t[1,3], dh_t[2,3], dh_t[3,3], dh_t[4,3], dh_t[5,3]]
 	
-	# alphas = [ 0.0, dh_t[0,1], dh_t[1,1], dh_t[2,1], dh_t[3,1], dh_t[4,1], dh_t[5,1]]
+	alphas = [ 0.0, dh_t[0,1], dh_t[1,1], dh_t[2,1], dh_t[3,1], dh_t[4,1], dh_t[5,1]]
 
-	# A1 = np.array([[ cos(theta[1]), - sin(theta[1]) * cos(alpha[1]),   sin(theta[1]) * sin(alpha[1]),          0],
-	# 			   [ sin(theta[1]),   cos(theta[1]) * cos(alpha[1]), - cos(theta[1]) * sin(alpha[1]),          0],
-	# 			   [ 		 0,               sin(alpha[1]),               cos(alpha[1]), dh_t[0, 2]],
-	# 			   [ 		 0,                       0,                       0,          1]])
+	A1 = np.array([[ cos(theta[1]), - sin(theta[1]) * cos(alpha[1]),   sin(theta[1]) * sin(alpha[1]),          0],
+				   [ sin(theta[1]),   cos(theta[1]) * cos(alpha[1]), - cos(theta[1]) * sin(alpha[1]),          0],
+				   [ 		 0,               sin(alpha[1]),               cos(alpha[1]), dh_t[0, 2]],
+				   [ 		 0,                       0,                       0,          1]])
 	
-	# A2 = np.array([[ cos(theta[2]), - sin(theta[2]) * cos(alpha[2]),   sin(theta[2]) * sin(alpha[2]), links[2] * cos(theta[2])],
-	# 			   [ sin(theta[2]),   cos(theta[2]) * cos(alpha[2]), - cos(theta[2]) * sin(alpha[2]), links[2] * sin(theta[2])],
-	# 			   [ 		 0,   			  sin(alpha[2]),   			   cos(alpha[2]),  	        dh_t[1, 2]],
-	# 			   [ 		 0, 					  0, 					   0, 		       	     1]])
+	A2 = np.array([[ cos(theta[2]), - sin(theta[2]) * cos(alpha[2]),   sin(theta[2]) * sin(alpha[2]), links[2] * cos(theta[2])],
+				   [ sin(theta[2]),   cos(theta[2]) * cos(alpha[2]), - cos(theta[2]) * sin(alpha[2]), links[2] * sin(theta[2])],
+				   [ 		 0,   			  sin(alpha[2]),   			   cos(alpha[2]),  	        dh_t[1, 2]],
+				   [ 		 0, 					  0, 					   0, 		       	     1]])
 	
-	# A3 = np.array([[ cos(theta[3]), - sin(theta[3]) * cos(alpha[3]),   sin(theta[3]) * sin(alpha[3]), 			   0],
-	# 			   [ sin(theta[3]),   cos(theta[3]) * cos(alpha[3]), - cos(theta[3]) * sin(alpha[3]), 			   0],
-	# 			   [		 0,  			  sin(alpha[3]),   			   cos(alpha[3]), 	  dh_t[2, 2]],
-	# 			   [		 0, 					  0, 					   0,			   1]])
+	A3 = np.array([[ cos(theta[3]), - sin(theta[3]) * cos(alpha[3]),   sin(theta[3]) * sin(alpha[3]), 			   0],
+				   [ sin(theta[3]),   cos(theta[3]) * cos(alpha[3]), - cos(theta[3]) * sin(alpha[3]), 			   0],
+				   [		 0,  			  sin(alpha[3]),   			   cos(alpha[3]), 	  dh_t[2, 2]],
+				   [		 0, 					  0, 					   0,			   1]])
 	
-	# A4 = np.array([[ cos(theta[4]), - sin(theta[4]) * cos(alpha[4]),   sin(theta[4]) * sin(alpha[4]), 			   0],
-	# 			   [ sin(theta[4]),   cos(theta[4]) * cos(alpha[4]), - cos(theta[4]) * sin(alpha[4]), 			   0],
-	# 			   [		 0,  			  sin(alpha[4]),  			   cos(alpha[4]), 	  dh_t[3, 2]],
-	# 			   [		 0, 					  0, 					   0, 			   1]])
+	A4 = np.array([[ cos(theta[4]), - sin(theta[4]) * cos(alpha[4]),   sin(theta[4]) * sin(alpha[4]), 			   0],
+				   [ sin(theta[4]),   cos(theta[4]) * cos(alpha[4]), - cos(theta[4]) * sin(alpha[4]), 			   0],
+				   [		 0,  			  sin(alpha[4]),  			   cos(alpha[4]), 	  dh_t[3, 2]],
+				   [		 0, 					  0, 					   0, 			   1]])
 
-	# A5 = np.array([[ cos(theta[5]), - sin(theta[5]) * cos(alpha[5]),   sin(theta[5]) * sin(alpha[5]), 			   0],
-	# 			   [ sin(theta[5]),   cos(theta[5]) * cos(alpha[5]), - cos(theta[5]) * sin(alpha[5]), 			   0],
-	# 			   [		 0,  			  sin(alpha[5]),   			   cos(alpha[5]), 	  dh_t[4, 2]],
-	# 			   [		 0, 					  0, 					   0, 			   1]])
+	A5 = np.array([[ cos(theta[5]), - sin(theta[5]) * cos(alpha[5]),   sin(theta[5]) * sin(alpha[5]), 			   0],
+				   [ sin(theta[5]),   cos(theta[5]) * cos(alpha[5]), - cos(theta[5]) * sin(alpha[5]), 			   0],
+				   [		 0,  			  sin(alpha[5]),   			   cos(alpha[5]), 	  dh_t[4, 2]],
+				   [		 0, 					  0, 					   0, 			   1]])
 
-	# A6 = np.array([[ cos(theta[6]), - sin(theta[6]) * cos(alpha[6]),   sin(theta[6]) * sin(alpha[6]), 			   0],
-	# 			   [ sin(theta[6]),   cos(theta[6]) * cos(alpha[6]), - cos(theta[6]) * sin(alpha[6]), 			   0],
-	# 			   [		 0,  			  sin(alpha[6]),  			   cos(alpha[6]), 	  dh_t[5, 2]],
-	# 			   [		 0, 					  0, 					   0, 			   1]])
+	A6 = np.array([[ cos(theta[6]), - sin(theta[6]) * cos(alpha[6]),   sin(theta[6]) * sin(alpha[6]), 			   0],
+				   [ sin(theta[6]),   cos(theta[6]) * cos(alpha[6]), - cos(theta[6]) * sin(alpha[6]), 			   0],
+				   [		 0,  			  sin(alpha[6]),  			   cos(alpha[6]), 	  dh_t[5, 2]],
+				   [		 0, 					  0, 					   0, 			   1]])
 		
-	# H1 = A1
-	# H2 = np.matmul(H1, A2)
-	# H3 = np.matmul(H2, A3)
-	# H4 = np.matmul(H3, A4)
-	# H5 = np.matmul(H4, A5)
-	# H6 = np.matmul(H5, A6)
+	H1 = A1
+	H2 = np.matmul(H1, A2)
+	H3 = np.matmul(H2, A3)
+	H4 = np.matmul(H3, A4)
+	H5 = np.matmul(H4, A5)
+	H6 = np.matmul(H5, A6)
 
-	# if   link == 1: return H1
-	# elif link == 2: return H2
-	# elif link == 3: return H3
-	# elif link == 4: return H4
-	# elif link == 5: return H5
-	# elif link == 6: return H6
+	if   link == 1: return H1
+	elif link == 2: return H2
+	elif link == 3: return H3
+	elif link == 4: return H4
+	elif link == 5: return H5
+	elif link == 6: return H6
 	
 	
 def kf_test():

@@ -71,8 +71,8 @@ class TrajectoryPlanner():
             else:
                 target_pos=q[-1]
             max_speed = v[step]
-            print("\ntarget position ",target_pos)
-            print("Speed ",max_speed)
+            #print("\ntarget position ",target_pos)
+            #print("Speed ",max_speed)
             self.rexarm.set_positions(target_pos)
             self.rexarm.set_speeds(max_speed)
             self.rexarm.pause(self.dt)
