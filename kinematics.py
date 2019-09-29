@@ -138,28 +138,26 @@ def FK_pox(joint_angles):
 def IK(o , R):
 	""" TODO: Calculate inverse kinematics for rexarm return the required joint angles """
 
-	oc = np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]])
-	print(oc)
-	theta1 = atan2(oc[1], oc[0])  #two possibilities
-	theta3 = -acos((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2)) #two possibilities
-	theta2 = atan2(oc[2]-L1, sqrt(oc[0]**2 + oc[1]**2)) - atan2((L3+L4)*sin(theta3), L2 + (L3+L4)*cos(theta3)) #two possibilities because of theta 3
+	oc = np.round(np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]]),6)
 
-	#R03 = np.array([[ cos(theta1)*(cos(theta2+theta3)), -cos(theta1)*(sin(theta2+theta3)),  sin(theta1)],
-	# 				[ sin(theta1)*(cos(theta2+theta3)), -sin(theta1)*(sin(theta2+theta3)), -cos(theta1)],
-	# 				[           sin(theta2+theta3),            cos(theta2+theta3),        0]])
-	#print(R03)
-	theta3 = -theta3
-	theta2 = math.pi / 2 - theta2
+	theta1 = atan2(oc[1], oc[0])  #two possibilities
+	theta3 = acos(np.round((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2), 4)) #two possibilities
+	theta2 = pi/2 - (atan2(oc[2]-L1, sqrt(oc[0]**2 + oc[1]**2)) - atan2((L3+L4)*sin(-theta3), L2 + (L3+L4)*cos(-theta3))) #two possibilities because of theta 3
+
 	R03 = FK_dh([theta1, theta2, theta3, 0, 0, 0], 3)[0:3, 0:3]
 	#R03 = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
 	R36 = np.matmul(np.transpose(R03),R)
 
 
-	theta4 = atan2(R36[1][2], R36[0][2])
+	if round(R36[0][2],2) == 0.0 and round(R36[1][2],2) == 0.0:
+		#infinitely many solutions
+		theta4 = 0.0
+		theta6 = 0.0
+	else:
+		theta4 = atan2(R36[1][2], R36[0][2])
+		theta6 = atan2(R36[2][1], -R36[2][0])
+
 	theta5 = atan2(sqrt(1 - R36[2][2]**2), R36[2][2])
-	theta6 = atan2(R36[2][1],  -R36[2][0])
-
-
 
 	return [theta1, theta2, theta3, theta4, theta5, theta6]
 
@@ -176,18 +174,84 @@ def ik_test():
 	R = Rfull[0:3, 0:3]
 	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]]) 
 	print("Elbow at -90 gives: ",IK(o,R))
-	"""
+
 	#testing elbow at 45
 	Rfull = FK_dh([0,0,math.pi/4,0,0,0], 6)
 	R = Rfull[0:3, 0:3]
 	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]]) 
 	print("Elbow at 45 gives: ",IK(o,R))
-	
+
+	# testing elbow at 45
+	Rfull = FK_dh([0, 0, -math.pi / 4, 0, 0, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Elbow at -45 gives: ", IK(o, R))
+
 	#testing shoulder at 90
-	Rfull = FK_dh([0,math.pi/2,0, 0,0,0], 6)
+	Rfull = FK_dh([0,math.pi/2,0,0,0,0], 6)
 	R = Rfull[0:3, 0:3]
 	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]]) 
-	print("Shoulder at 90 gives: ",IK(o,R))"""
+	print("Shoulder at 90 gives: ",IK(o,R))
+
+	# testing shoulder at -90
+	Rfull = FK_dh([0, -math.pi / 2, 0, 0, 0, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Shoulder at -90 gives: ", IK(o, R))
+
+	# testing shoulder at 45
+	Rfull = FK_dh([0, math.pi / 4, 0, 0, 0, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Shoulder at 45 gives: ", IK(o, R))
+
+	# testing shoulder at -45
+	Rfull = FK_dh([0, -math.pi / 4, 0, 0, 0, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Shoulder at -45 gives: ", IK(o, R))
+
+	# testing base at 90, shoulder at 45
+	Rfull = FK_dh([math.pi/2, math.pi / 4, 0, 0, 0, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Base at 90 Shoulder at 45 gives: ", IK(o, R))
+
+	# testing base at 90, shoulder at -45
+	Rfull = FK_dh([math.pi / 2, -math.pi / 4, 0, 0, 0, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Base at 90 Shoulder at -45 gives: ", IK(o, R))
+
+	# testing base at 90, elbow at 60, shoulder at 30
+	Rfull = FK_dh([math.pi / 2, math.pi / 3, math.pi / 6, 0, 0, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Base at 90 Elbow at 60 Shoulder at 30 gives: ", IK(o, R))
+
+	# testing elbow at 90 deg, W2 at -90
+	Rfull = FK_dh([0, 0, pi / 2, 0, -pi/2, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Elbow at 90 gives, W2 at -90: ", IK(o, R))
+
+	# testing elbow at 90 deg, W2 at 90
+	Rfull = FK_dh([0, 0, pi / 2, 0, pi / 2, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Elbow at 90 gives, W2 at 90: ", IK(o, R))
+
+	# testing elbow at 90 deg, W1 at -45, W2 at 90
+	Rfull = FK_dh([0, 0, pi / 2, -pi/4, pi / 2, 0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Elbow at 90 gives,W1 at -45,  W2 at 90: ", IK(o, R))
+
+	# testing elbow at 90 deg, W1 at -45, W2 at 90, W3 at 45
+	Rfull = FK_dh([0, 0, pi / 2, -pi / 4, pi / 2, pi/4], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Elbow at 90 gives,W1 At -45 W2 at 90 W3 at 45: ", IK(o, R))
 
 ik_test()
 
