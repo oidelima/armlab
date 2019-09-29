@@ -12,111 +12,113 @@ There are some functions to start with, you may need to implement a few more
 """
 
 #link lengths in mm
-# GROUND_OFFSET = 0.0
-# BASE = 42.8
-# SHOULDER = 99.29
-# ELBOW = 67.2
-# WRIST_Z_1 = 42.3
-# WRIST_X = 47.6
-# WRIST_Z_2 = 59.8
-# links = [GROUND_OFFSET, BASE, SHOULDER, ELBOW, WRIST_Z_1, WRIST_X, WRIST_Z_2]
+L1 = 42.8
+L2 = 99.29
+L3 = 67.2
+L4 = 42.3
+L5 = 47.6
+L6 = 59.8
+
 
 def FK_dh(joint_angles, link):
-	pass
-
 	"""
-	TODO: implement this function
+    TODO: implement this function
 
-	Calculate forward kinematics for rexarm using DH convention
-	return a transformation matrix representing the pose of the 
-	desired link
-	note: phi is the euler angle about the y-axis in the base frame
+    Calculate forward kinematics for rexarm using DH convention
 
-	# """
-	# dh_t = np.array([[     0.0, pi/2,            links[1], pi/2 + joint_angles[0]], 
-	# 				 [links[2],  0.0,                 0.0, pi/2 + joint_angles[1]],
-	# 				 [     0.0, pi/2,                 0.0, pi/2 + joint_angles[2]],
-	# 				 [     0.0, pi/2, links[3] + links[4], pi/1 + joint_angles[3]],
-	# 				 [     0.0, pi/2,                 0.0, pi/1 + joint_angles[4]],
-	# 				 [     0.0,  0.0, links[5] + links[6],        joint_angles[5]]])
+    return a transformation matrix representing the pose of the
+    desired link
 
-	# thetas= [ 0.0, dh_t[0,3], dh_t[1,3], dh_t[2,3], dh_t[3,3], dh_t[4,3], dh_t[5,3]]
-	
-	# th1 = dh_t[0,3]
-	# th2 = dh_t[1,3]
-	# th3 = dh_t[2,3]
-	# th4 = dh_t[3,3]
-	# th5 = dh_t[4,3]
-	# th6 = dh_t[5,3]
+    note: phi is the euler angle about the y-axis in the base frame
 
-	#alphas = [ 0.0, dh_t[0,1], dh_t[1,1], dh_t[2,1], dh_t[3,1], dh_t[4,1], dh_t[5,1]]
-	# al1 = dh_t[0,1]
-	# al2 = dh_t[1,1]
-	# al3 = dh_t[2,1]
-	# al4 = dh_t[3,1]
-	# al5 = dh_t[4,1]
-	# al6 = dh_t[5,1]
+    """
+	dhtable = np.array([[0, math.pi / 2, L1, math.pi + joint_angles[0]],
+						[L2, 0, 0, math.pi / 2 + joint_angles[1]],
+						[0, math.pi / 2, 0, math.pi / 2 + joint_angles[2]],
+						[0, math.pi / 2, L3 + L4, math.pi + joint_angles[3]],
+						[0, math.pi / 2, 0, math.pi + joint_angles[4]],
+						[0, 0, L5 + L6,joint_angles[5]]])
 
-	# thetas = [ 0.0, dh_t[0,3], dh_t[1,3], dh_t[2,3], dh_t[3,3], dh_t[4,3], dh_t[5,3]]
-	
-	# alphas = [ 0.0, dh_t[0,1], dh_t[1,1], dh_t[2,1], dh_t[3,1], dh_t[4,1], dh_t[5,1]]
+	# link thetas
+	th1 = dhtable[0, 3];
+	th2 = dhtable[1, 3];
+	th3 = dhtable[2, 3];
+	th4 = dhtable[3, 3];
+	th5 = dhtable[4, 3];
+	th6 = dhtable[5, 3];
 
-	# A1 = np.array([[ cos(theta[1]), - sin(theta[1]) * cos(alpha[1]),   sin(theta[1]) * sin(alpha[1]),          0],
-	# 			   [ sin(theta[1]),   cos(theta[1]) * cos(alpha[1]), - cos(theta[1]) * sin(alpha[1]),          0],
-	# 			   [ 		 0,               sin(alpha[1]),               cos(alpha[1]), dh_t[0, 2]],
-	# 			   [ 		 0,                       0,                       0,          1]])
-	
-	# A2 = np.array([[ cos(theta[2]), - sin(theta[2]) * cos(alpha[2]),   sin(theta[2]) * sin(alpha[2]), links[2] * cos(theta[2])],
-	# 			   [ sin(theta[2]),   cos(theta[2]) * cos(alpha[2]), - cos(theta[2]) * sin(alpha[2]), links[2] * sin(theta[2])],
-	# 			   [ 		 0,   			  sin(alpha[2]),   			   cos(alpha[2]),  	        dh_t[1, 2]],
-	# 			   [ 		 0, 					  0, 					   0, 		       	     1]])
-	
-	# A3 = np.array([[ cos(theta[3]), - sin(theta[3]) * cos(alpha[3]),   sin(theta[3]) * sin(alpha[3]), 			   0],
-	# 			   [ sin(theta[3]),   cos(theta[3]) * cos(alpha[3]), - cos(theta[3]) * sin(alpha[3]), 			   0],
-	# 			   [		 0,  			  sin(alpha[3]),   			   cos(alpha[3]), 	  dh_t[2, 2]],
-	# 			   [		 0, 					  0, 					   0,			   1]])
-	
-	# A4 = np.array([[ cos(theta[4]), - sin(theta[4]) * cos(alpha[4]),   sin(theta[4]) * sin(alpha[4]), 			   0],
-	# 			   [ sin(theta[4]),   cos(theta[4]) * cos(alpha[4]), - cos(theta[4]) * sin(alpha[4]), 			   0],
-	# 			   [		 0,  			  sin(alpha[4]),  			   cos(alpha[4]), 	  dh_t[3, 2]],
-	# 			   [		 0, 					  0, 					   0, 			   1]])
+	# link alphas
+	al1 = dhtable[0, 1];
+	al2 = dhtable[1, 1];
+	al3 = dhtable[2, 1];
+	al4 = dhtable[3, 1];
+	al5 = dhtable[4, 1];
+	al6 = dhtable[5, 1];
 
-	# A5 = np.array([[ cos(theta[5]), - sin(theta[5]) * cos(alpha[5]),   sin(theta[5]) * sin(alpha[5]), 			   0],
-	# 			   [ sin(theta[5]),   cos(theta[5]) * cos(alpha[5]), - cos(theta[5]) * sin(alpha[5]), 			   0],
-	# 			   [		 0,  			  sin(alpha[5]),   			   cos(alpha[5]), 	  dh_t[4, 2]],
-	# 			   [		 0, 					  0, 					   0, 			   1]])
+	A1 = np.array([[math.cos(th1), -math.sin(th1) * math.cos(al1), math.sin(th1) * math.sin(al1), 0],
+				   [math.sin(th1), math.cos(th1) * math.cos(al1), -math.cos(th1) * math.sin(al1), 0],
+				   [0, math.sin(al1), math.cos(al1), dhtable[0, 2]],
+				   [0, 0, 0, 1]])
 
-	# A6 = np.array([[ cos(theta[6]), - sin(theta[6]) * cos(alpha[6]),   sin(theta[6]) * sin(alpha[6]), 			   0],
-	# 			   [ sin(theta[6]),   cos(theta[6]) * cos(alpha[6]), - cos(theta[6]) * sin(alpha[6]), 			   0],
-	# 			   [		 0,  			  sin(alpha[6]),  			   cos(alpha[6]), 	  dh_t[5, 2]],
-	# 			   [		 0, 					  0, 					   0, 			   1]])
-		
-	# H1 = A1
-	# H2 = np.matmul(H1, A2)
-	# H3 = np.matmul(H2, A3)
-	# H4 = np.matmul(H3, A4)
-	# H5 = np.matmul(H4, A5)
-	# H6 = np.matmul(H5, A6)
+	A2 = np.array([[math.cos(th2), -math.sin(th2) * math.cos(al2), math.sin(th2) * math.sin(al2), L2 * math.cos(th2)],
+				   [math.sin(th2), math.cos(th2) * math.cos(al2), -math.cos(th2) * math.sin(al2), L2 * math.sin(th2)],
+				   [0, math.sin(al2), math.cos(al2), dhtable[1, 2]],
+				   [0, 0, 0, 1]])
 
-	# if   link == 1: return H1
-	# elif link == 2: return H2
-	# elif link == 3: return H3
-	# elif link == 4: return H4
-	# elif link == 5: return H5
-	# elif link == 6: return H6
-	
-	
+	A3 = np.array([[math.cos(th3), -math.sin(th3) * math.cos(al3), math.sin(th3) * math.sin(al3), 0],
+				   [math.sin(th3), math.cos(th3) * math.cos(al3), -math.cos(th3) * math.sin(al3), 0],
+				   [0, math.sin(al3), math.cos(al3), dhtable[2, 2]],
+				   [0, 0, 0, 1]])
+
+	A4 = np.array([[math.cos(th4), -math.sin(th4) * math.cos(al4), math.sin(th4) * math.sin(al4), 0],
+				   [math.sin(th4), math.cos(th4) * math.cos(al4), -math.cos(th4) * math.sin(al4), 0],
+				   [0, math.sin(al4), math.cos(al4), dhtable[3, 2]],
+				   [0, 0, 0, 1]])
+	A5 = np.array([[math.cos(th5), -math.sin(th5) * math.cos(al5), math.sin(th5) * math.sin(al5), 0],
+				   [math.sin(th5), math.cos(th5) * math.cos(al5), -math.cos(th5) * math.sin(al5), 0],
+				   [0, math.sin(al5), math.cos(al5), dhtable[4, 2]],
+				   [0, 0, 0, 1]])
+
+	A6 = np.array([[math.cos(th6), -math.sin(th6) * math.cos(al6), math.sin(th6) * math.sin(al6), 0],
+				   [math.sin(th6), math.cos(th6) * math.cos(al6), -math.cos(th6) * math.sin(al6), 0],
+				   [0, math.sin(al6), math.cos(al6), dhtable[5, 2]],
+				   [0, 0, 0, 1]])
+
+	H1 = A1
+	H2 = np.matmul(H1, A2)
+	H3 = np.matmul(H2, A3)
+	H4 = np.matmul(H3, A4)
+	H5 = np.matmul(H4, A5)
+	H6 = np.matmul(H5, A6)
+	#print(H6)
+
+	if link == 1:
+		return H1
+	elif link == 2:
+		return H2
+	elif link == 3:
+		return H3
+	elif link == 4:
+		return H4
+	elif link == 5:
+		return H5
+	elif link == 6:
+		return H6
+
+
 def kf_test():
-	pass
-	#print("Elbow at 90 deg gives: ", np.matmul(FK_dh([0,0,math.pi/2,0,0,0], 6), np.array([0,0,0,1]))) # elbow at 90
-	#print("Elbow at -90 deg gives: ", np.matmul(FK_dh([0,0,-math.pi/2,0,0,0], 6), np.array([0,0,0,1]))) # elbow at -90
-	#print("Elbow at 45 deg gives: ", np.matmul(FK_dh([0,0,math.pi/4,0,0,0], 6), np.array([0,0,0,1]))) # elbow at 45
-	#print("Elbow at -45 deg gives: ", np.matmul(FK_dh([0,0,-math.pi/4,0,0,0], 6), np.array([0,0,0,1]))) # elbow at -45
-	#print("Shoulder at 90 deg gives: ", np.matmul(FK_dh([0,math.pi/2,0, 0,0,0], 6), np.array([0,0,0,1]))) # shoulder at 90
-	#print("Shoulder at -90 deg gives: ", np.matmul(FK_dh([0,-math.pi/2,0,0,0,0], 6), np.array([0,0,0,1]))) # shoulder at -90
-	#print("Shoulder at 45 deg gives: ", np.matmul(FK_dh([0,math.pi/4,0,0,0,0], 6), np.array([0,0,0,1]))) # shoulder at 45
-	#print("Shoulder at -45 deg gives: ", np.matmul(FK_dh([0,-math.pi/4,0,0,0,0], 6), np.array([0,0,0,1]))) # shoulder at -45
-	#print("Shoulder at -45 deg, base at 90, elboow at -45 gives: ", np.matmul(FK_dh([math.pi/2,-math.pi/4,-math.pi/4,0,0,0], 4), np.array([0,0,0,1]))) # shoulder at -45
+
+	print("Elbow at 90 deg gives: ", np.matmul(FK_dh([0,0,math.pi/2,0,0,0], 6), np.array([0,0,0,1]))) # elbow at 90
+	print("Elbow at -90 deg gives: ", np.matmul(FK_dh([0,0,-math.pi/2,0,0,0], 6), np.array([0,0,0,1]))) # elbow at -90
+	print("Elbow at 45 deg gives: ", np.matmul(FK_dh([0,0,math.pi/4,0,0,0], 6), np.array([0,0,0,1]))) # elbow at 45
+	print("Elbow at -45 deg gives: ", np.matmul(FK_dh([0,0,-math.pi/4,0,0,0], 6), np.array([0,0,0,1]))) # elbow at -45
+	print("Shoulder at 90 deg gives: ", np.matmul(FK_dh([0,math.pi/2,0, 0,0,0], 6), np.array([0,0,0,1]))) # shoulder at 90
+	print("Shoulder at -90 deg gives: ", np.matmul(FK_dh([0,-math.pi/2,0,0,0,0], 6), np.array([0,0,0,1]))) # shoulder at -90
+	print("Shoulder at 45 deg gives: ", np.matmul(FK_dh([0,math.pi/4,0,0,0,0], 6), np.array([0,0,0,1]))) # shoulder at 45
+	print("Shoulder at -45 deg gives: ", np.matmul(FK_dh([0,-math.pi/4,0,0,0,0], 6), np.array([0,0,0,1]))) # shoulder at -45
+	print("Shoulder at -45 deg, base at 90, elboow at -45 gives: ", np.matmul(FK_dh([math.pi/2,-math.pi/4,-math.pi/4,0,0,0], 4), np.array([0,0,0,1]))) # shoulder at -45
+
+kf_test()
 
 def FK_pox(joint_angles):
 	pass
@@ -135,60 +137,59 @@ def FK_pox(joint_angles):
 
 def IK(o , R):
 	""" TODO: Calculate inverse kinematics for rexarm return the required joint angles """
-	pass
-	# oc = np.array([[o[0] - (links[6]+links[5])*R[0][2]], [o[1] - (links[6] + links[5])*R[1][2]], [o[2] - (links[6] + links[5])*R[2][2]]])
-	# oc.round(4)
-	
-	# theta1 = atan2(oc[0], oc[1]) + pi #two possibilities
-	
-	# theta3 =  -acos((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2)) #two possibilities
-	
-	# theta2 = pi/2 - (atan2(oc[2]-L1, sqrt(oc[0]**2 + oc[1]**2)) - atan2((L3+L4)*sin(theta3), L2 + (L3+L4)*cos(theta3))) #two possibilities because of theta 3
-	
-	# theta1 = round(theta1, 6)
 
+	oc = np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]])
+	print(oc)
+	theta1 = atan2(oc[1], oc[0])  #two possibilities
+	theta3 = -acos((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2)) #two possibilities
+	theta2 = atan2(oc[2]-L1, sqrt(oc[0]**2 + oc[1]**2)) - atan2((L3+L4)*sin(theta3), L2 + (L3+L4)*cos(theta3)) #two possibilities because of theta 3
 
-	# R03 = np.array([[ cos(theta1)*(cos(theta2+theta3)), -cos(theta1)*(sin(theta2+theta3)),  sin(theta1)],
+	#R03 = np.array([[ cos(theta1)*(cos(theta2+theta3)), -cos(theta1)*(sin(theta2+theta3)),  sin(theta1)],
 	# 				[ sin(theta1)*(cos(theta2+theta3)), -sin(theta1)*(sin(theta2+theta3)), -cos(theta1)],
 	# 				[           sin(theta2+theta3),            cos(theta2+theta3),        0]])
+	#print(R03)
+	theta3 = -theta3
+	theta2 = math.pi / 2 - theta2
+	R03 = FK_dh([theta1, theta2, theta3, 0, 0, 0], 3)[0:3, 0:3]
+	#R03 = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
+	R36 = np.matmul(np.transpose(R03),R)
 
-	# R36 = np.matmul(R03.transpose(),R)
 
-	# theta4 = atan2(R36[1][2], R36[0][2])
-	
-	# theta5 = atan2(sqrt(1 - R36[2][2]**2), R36[2][2])
-	
-	# theta6 = atan2(R36[2][1], - R[2][0])
+	theta4 = atan2(R36[1][2], R36[0][2])
+	theta5 = atan2(sqrt(1 - R36[2][2]**2), R36[2][2])
+	theta6 = atan2(R36[2][1],  -R36[2][0])
 
-	# return [theta1, theta2, theta3, theta4, theta5, theta6]
+
+
+	return [theta1, theta2, theta3, theta4, theta5, theta6]
 
 def ik_test():
-	pass
+
 	#testing elbow at 90 deg
-	# Rfull = FK_dh([0,0,pi/2,0,0,0], 6)
-	# R = Rfull[0:3, 0:3]
-	# o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]]) 
-	#print("Elbow at 90 gives: ",IK(o,R))
-	"""
+	Rfull = FK_dh([0,0,pi/2,0,0,0], 6)
+	R = Rfull[0:3, 0:3]
+	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]])
+	print("Elbow at 90 gives: ",IK(o,R))
+
 	#testing elbow at -90
 	Rfull = FK_dh([0,0,-math.pi/2,0,0,0], 6)
 	R = Rfull[0:3, 0:3]
 	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]]) 
 	print("Elbow at -90 gives: ",IK(o,R))
-
+	"""
 	#testing elbow at 45
 	Rfull = FK_dh([0,0,math.pi/4,0,0,0], 6)
 	R = Rfull[0:3, 0:3]
 	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]]) 
 	print("Elbow at 45 gives: ",IK(o,R))
-
+	
 	#testing shoulder at 90
 	Rfull = FK_dh([0,math.pi/2,0, 0,0,0], 6)
 	R = Rfull[0:3, 0:3]
 	o = np.array([Rfull[0][3], Rfull[1][3], Rfull[2][3]]) 
 	print("Shoulder at 90 gives: ",IK(o,R))"""
 
-
+ik_test()
 
 # def get_euler_angles_from_T(T):
 # 	""" TODO: implement this function return the Euler angles from a T matrix """
