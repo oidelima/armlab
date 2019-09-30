@@ -40,6 +40,10 @@ class StateMachine():
 				self.record()
 			if(self.next_state == "calibrate"):
 				self.calibrate()
+			if(self.next_state == "block detection"):
+				self.block_detection()
+			if(self.next_state == "color buckets"):
+				self.color_buckets()
 
 		if(self.current_state == "execute"):
 			self.prev_state = "execute"
@@ -62,8 +66,10 @@ class StateMachine():
 				self.calibrate()
 			if(self.next_state == "execute"):
 				self.execute()
-		if(self.next_state == "block detection"):
-			self.block_detection()
+			if(self.next_state == "block detection"):
+				self.block_detection()
+			if(self.next_state == "color buckets"):
+				self.color_buckets()
 		
 		if(self.current_state == "record"):
 			self.prev_state = "record"
@@ -83,6 +89,13 @@ class StateMachine():
 				self.idle()
 			if(self.next_state == "manual"):
 				self.manual()
+
+		if(self.current_state == "color buckets"):
+			self.prev_state = "color buckets"
+			if(self.next_state == "idle"):
+				self.idle()
+			if(self.next_state == "manual"):
+				self.manual()		
 
 	"""Functions run for each state"""
 	def manual(self):
@@ -105,16 +118,18 @@ class StateMachine():
 	def execute(self):
 		self.status_message = "Executing ..."
 		self.current_state = "execute"
-		for i in range(len(self.waypoints)):
-			[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), self.waypoints[i], 4)
-			self.tp.execute_plan([q,v])
-			self.rexarm.pause(2)
 
+
+		#self.rexarm.set_positions(ja[12])
+			# for i in range(len(self.waypoints)):
+			# 	[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), self.waypoints[i], 4)
+			# 	self.tp.execute_plan([q,v])
+			# 	self.rexarm.pause(2)
 		if self.prev_state == "manual":
 			self.set_next_state("manual")
 		else:
 			self.set_next_state("idle")
-		
+
 
 	def record(self):
 		self.current_state = "record"
@@ -127,7 +142,11 @@ class StateMachine():
 		self.kinect.blockDetector()
 		self.set_next_state("idle")
 
-		
+	def color_buckets(self):
+		self.current_state = "color buckets"
+		self.kinect.colorbuckets()
+		self.set_next_state("idle")
+
 	def calibrate(self):
 		self.current_state = "calibrate"
 		if self.prev_state == "manual":

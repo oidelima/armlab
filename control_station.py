@@ -36,7 +36,7 @@ MAX_Y = 520
 
 """ Serial Port Parameters"""
 BAUDRATE   = 1000000
-DEVICENAME = "/dev/ttyACM1".encode('utf-8')
+DEVICENAME = "/dev/ttyACM0".encode('utf-8')
 
 """Threads"""
 class VideoThread(QThread):
@@ -128,6 +128,8 @@ class Gui(QMainWindow):
 		self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
 		self.ui.btnUser2.setText("Block Detector")
 		self.ui.btnUser2.clicked.connect(partial(self.sm.set_next_state, "block detection"))
+		self.ui.btnUser2.setText("Color Buckets")
+		self.ui.btnUser2.clicked.connect(partial(self.sm.set_next_state, "color buckets"))
 		self.ui.sldrBase.valueChanged.connect(self.sliderChange)
 		self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
 		self.ui.sldrElbow.valueChanged.connect(self.sliderChange)

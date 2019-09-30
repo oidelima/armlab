@@ -4,6 +4,7 @@ import numpy as np
 from PyQt4.QtGui import QImage
 import freenect
 import copy
+from numpy import *
 
 class Kinect():
 	def __init__(self):
@@ -43,11 +44,14 @@ class Kinect():
 		self.DepthHSVThreshold = np.zeros((480,640,3)).astype(np.uint8)
 		self.DepthCMThreshold = np.array([])
 		self.BlockMask = np.zeros((480,640,1)).astype(np.uint8)
+		self.roi = np.zeros((480,640,3)).astype(np.uint8)
 
 		""" block info """
 		self.block_contours = np.array([])
 		self.block_coordinates = []
 		self.block_coordinates_raw = []
+		self.block_colors = {}
+		self.block_orientations = []
 
 	def captureVideoFrame(self):
 		""" Capture frame from Kinect, format is 24bit RGB """
@@ -149,7 +153,7 @@ class Kinect():
 			self.DepthHSVThreshold[...,0] = self.currentDepthFrame
 			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,0] = 0
 			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,0] = 0
-			self.BlockMask[self.DepthHSVThreshold[...,0] != 0] = 255
+			self.BlockMask[self.DepthHSVThreshold[...,0] != 0] = 1
 			
 			#Isolating Blocks
 			self.DepthHSVThreshold[...,1] = 255
@@ -166,6 +170,8 @@ class Kinect():
 			self.detectBlocksInDepthImage()
 			
 			cv2.drawContours(self.DepthCMThreshold,self.block_contours,-1,(0,0,0),1)
+			
+			self.colorbuckets()
 			img = QImage(self.DepthCMThreshold, self.DepthCMThreshold.shape[1], self.DepthCMThreshold.shape[0], QImage.Format_RGB888)
 			return img
 		except:
@@ -182,15 +188,14 @@ class Kinect():
 		return edged
 
 	def masking(self, image):
-		return cv2.bitwise_and(self.auto_canny(image,0.33), self.auto_canny(image,.33), mask = self.BlockMask)
-		#return image
+		#return cv2.bitwise_and(self.auto_canny(image,0.33), self.auto_canny(image,.33), mask = self.BlockMask)
+		return image
 		#return self.auto_canny(image,.7)
 
 	def blockDetector(self):
 		""" TODO: Implement your block detector here. You will need to locate blocks in 3D space """
 		self.block_coordinates_raw = []
 		self.block_coordinates = []
-
 		font = cv2.FONT_HERSHEY_SIMPLEX
 		fontScale = .5
 		fontColor = (255,255,255)
@@ -212,6 +217,178 @@ class Kinect():
 				location = str(np.round(cx_w[0],3)) +", "+ str(np.round(cy_w[0],3)) +", "+ str(np.round(cz_w,3)) 
 				cv2.putText(self.DepthCMThreshold, location, (cy,cx), font, fontScale, fontColor, lineType)
 		pass
+
+	def accuracycheck(self):
+			DepthCM = self.DepthCM
+			DepthCM[self.currentDepthFrame > 723, 0] = 0
+			DepthCM[self.currentDepthFrame < 717, 0] = 0
+			DepthCM[...,1] = 0
+			DepthCM[...,2] = 0
+			edges = cv2.Canny(DepthCM, 100, 150)
+			cv2.imwrite("Dedges.jpg", edges )
+			lines = cv2.HoughLines(edges,1,np.pi/180,200)
+			print("\n d lines : ",lines)
+
+			VideoCM = self.currentVideoFrame
+			VideoCM[self.currentDepthFrame > 723, 0] = 0
+			VideoCM[self.currentDepthFrame < 717, 0] = 0
+			VideoCM[self.currentDepthFrame > 723, 1] = 0
+			VideoCM[self.currentDepthFrame < 717, 1] = 0
+			VideoCM[self.currentDepthFrame > 723, 2] = 0
+			VideoCM[self.currentDepthFrame < 717, 2] = 0
+			edges = cv2.Canny(VideoCM, 150, 200)
+			cv2.imwrite("vedges.jpg", edges)
+			lines = cv2.HoughLines(edges,1,np.pi/180,200)
+			print("\n v lines : ",lines)
+
+	def roi(self):
+		pass
+
+
+	def colorbuckets(self):	
+		try:
+			self.block_orientations = []
+			if len(self.block_contours) != 0 :
+				for contour in self.block_contours:
+					print("Checking for contour")
+					perimeter = cv2.arcLength(contour, True)
+					approx = cv2.approxPolyDP(contour, 0.02 * perimeter, True)
+					#print("\ncontour is : ",approx)
+					#x, y, w, h = cv2.boundingRect(approx)
+					rect = cv2.minAreaRect(contour)	
+					box = cv2.boxPoints(rect)
+					box = np.int0(box)
+					cv2.drawContours(self.currentVideoFrame,[box],0,(0,0,255),2)
+					print("box coordinates ",box)
+					#self.block_orientations.append((x,y,w,h))
+					#image = cv2.rectangle(self.currentVideoFrame, (x,y), (x+w, y+h), (0,0,0),2)
+					#cv2.imwrite("contours.jpg",image)
+			# 		print("finding orientation")
+			# 		if len(contour)>4:
+			# 			result = cv2.fitEllipse(contour)
+			# 			print(result)
+			# 			cv2.ellipse(self.currentVideoFrame,result,(0,0,0))
+			# 			self.block_orientations.append(result[-1])
+			# print("\n\nAngle : ", self.block_orientations)
+			# print("In color bucket")
+			# height_mask = self.currentDepthFrame
+			# height_mask[height_mask > 725] = 0
+			# height_mask[height_mask < 715] = 0
+			# image = self.currentVideoFrame
+			# image = cv2.GaussianBlur(image,(3,3),0)
+			# image = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
+			# cv2.imwrite("hsv.jpg",image)
+			# value = image[...,2]
+			# ret, thresh = cv2.threshold(value,210,255,cv2.THRESH_BINARY)
+			# height_mask = height_mask.astype(np.uint8)
+
+			# self.roi = cv2.bitwise_and(height_mask, thresh.astype(np.uint8))
+			# ret, self.roi = cv2.threshold(self.roi,127,255,cv2.THRESH_BINARY)
+			# cv2.imwrite("roi.jpg",self.roi)
+			# image = cv2.GaussianBlur(self.roi,(7,7),0)
+			# edges = self.auto_canny(self.roi,.15)
+			# cv2.imwrite("edges.jpg",edges)
+		
+			# print("In color bucket")
+			# image = self.currentVideoFrame
+			# image = cv2.GaussianBlur(image,(3,3),0)
+			# image = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
+			# cv2.imwrite("hsv.jpg",image)
+			# value = image[...,2]
+			# cv2.imwrite("value.jpg",value)
+			# hue = image[...,0]
+			# hue_green = cv2.inRange(hue, 50, 70)
+			# hue_blue = cv2.inRange(hue, 110, 130)
+			# hue_red = cv2. inRange(hue, 160, 170)
+			# hue_orange = cv2.inRange(hue, 5, 25)
+			# hue_pink = cv2.inRange(hue, 150, 165)
+			# hue_yellow = cv2.inRange(hue, 20, 40)
+			# hue_purple = cv2.inRange(hue, 140,160)
+			# cv2.imwrite("hue.jpg",hue)
+
+			# self.roi = cv2.bitwise_and(hue, hue, mask = self.BlockMask)
+			# cv2.imwrite("roi.jpg",self.roi)
+			# red = cv2.bitwise_and(hue_red, hue_red, mask = self.BlockMask)
+			# cv2.imwrite("red.jpg",red)
+			# green = cv2.bitwise_and(hue_green, hue_green, mask = self.BlockMask)
+			# cv2.imwrite("green.jpg",green)
+			# blue = cv2.bitwise_and(hue_blue, hue_blue, mask = self.BlockMask)
+			# cv2.imwrite("blue.jpg",blue)
+			# yellow = cv2.bitwise_and(hue_yellow, hue_yellow, mask = self.BlockMask)
+			# cv2.imwrite("yellow.jpg",yellow)
+			# pink = cv2.bitwise_and(hue_pink, hue_pink, mask = self.BlockMask)
+			# cv2.imwrite("pink.jpg", pink)
+			# purple = cv2.bitwise_and(hue_purple, hue_purple, mask = self.BlockMask)
+			# cv2.imwrite("purple.jpg", purple)
+			# orange = cv2.bitwise_and(hue_orange, hue_orange, mask = self.BlockMask)
+			# cv2.imwrite("orange.jpg", orange)
+			# print("color guassian blur complete")
+			# image = self.currentVideoFrame
+			# image = cv2.GaussianBlur(image,(3,3),0)
+			# print("color guassian blur complete")
+			# image_green = cv2.inRange(image,(0,200,0),(0,255,0))
+			# image_blue = cv2.inRange(image ,(0,0,200),(0,0,255))
+			# image_red = cv2. inRange(image ,(200,0,0),(255,0,0))
+			# image_orange = cv2.inRange(image ,(255,69,0),(255,165,0))
+			# image_pink = cv2.inRange(image ,(255,105,180),(255,192,203))
+			# image_yellow = cv2.inRange(image ,(255,255,0),(255,255,204))
+			# image_purple = cv2.inRange(image ,(75,0,130),(153,50,204))
+			# cv2.imwrite("color.jpg",image)
+			
+			# image_red[...,0] = cv2.bitwise_and(image_red[...,0], image_red[...,0], mask = self.BlockMask)
+			# image_red[...,1] = cv2.bitwise_and(image_red[...,1], image_red[...,1], mask = self.BlockMask)
+			# image_red[...,2] = cv2.bitwise_and(image_red[...,2], image_red[...,2], mask = self.BlockMask)
+			# cv2.imwrite("image_red.jpg",image_red)
+
+			# image_green[...,0] = cv2.bitwise_and(image_green[...,0], image_green[...,0], mask = self.BlockMask)
+			# image_green[...,1] = cv2.bitwise_and(image_green[...,1], image_green[...,1], mask = self.BlockMask)
+			# image_green[...,2] = cv2.bitwise_and(image_green[...,2], image_green[...,2], mask = self.BlockMask)
+			# cv2.imwrite("image_green.jpg",image_green)
+
+			# image_blue[...,0] = cv2.bitwise_and(image_blue[...,0], image_blue[...,0], mask = self.BlockMask)
+			# image_blue[...,1] = cv2.bitwise_and(image_blue[...,1], image_blue[...,1], mask = self.BlockMask)
+			# image_blue[...,2] = cv2.bitwise_and(image_blue[...,2], image_blue[...,2], mask = self.BlockMask)
+			# cv2.imwrite("image_blue.jpg",image_blue)
+
+			# image_yellow[...,0] = cv2.bitwise_and(image_yellow[...,0], image_yellow[...,0], mask = self.BlockMask)
+			# image_yellow[...,1] = cv2.bitwise_and(image_yellow[...,1], image_yellow[...,1], mask = self.BlockMask)
+			# image_yellow[...,2] = cv2.bitwise_and(image_yellow[...,2], image_pink[...,2], mask = self.BlockMask)
+			# cv2.imwrite("image_yellow.jpg",image_yellow)
+
+			# image_pink[...,0] = cv2.bitwise_and(image_pink[...,0], image_pink[...,0], mask = self.BlockMask)
+			# image_pink[...,1] = cv2.bitwise_and(image_pink[...,1], image_pink[...,1], mask = self.BlockMask)
+			# image_pink[...,2] = cv2.bitwise_and(image_pink[...,2], image_pink[...,2], mask = self.BlockMask)
+			# cv2.imwrite("image_pink.jpg", image_pink)
+
+			# image_purple[...,0] = cv2.bitwise_and(image_purple[...,0], image_purple[...,0], mask = self.BlockMask)
+			# image_purple[...,1] = cv2.bitwise_and(image_purple[...,1], image_purple[...,1], mask = self.BlockMask)
+			# image_purple[...,2] = cv2.bitwise_and(image_purple[...,2], image_orange[...,2], mask = self.BlockMask)
+			# cv2.imwrite("image_purple.jpg", image_purple)
+
+			# image_orange[...,0] = cv2.bitwise_and(image_orange[...,0], image_orange[...,0], mask = self.BlockMask)
+			# image_orange[...,1] = cv2.bitwise_and(image_orange[...,1], image_orange[...,1], mask = self.BlockMask)
+			# image_orange[...,2] = cv2.bitwise_and(image_orange[...,2], image_red[...,2], mask = self.BlockMask)
+			# cv2.imwrite("image_orange.jpg", image_orange)
+
+			# image = cv2.GaussianBlur(self.roi,(7,7),0)
+			# edges = self.auto_canny(self.roi,.15)
+			# cv2.imwrite("edges.jpg",edges)
+
+
+
+		except:
+			return None
+	
+	def workspaceedges(self):
+			v = np.median(image)
+			# apply automatic Canny edge detection using the computed median
+			lower = int(max(0, (1.0 - sigma) * v))
+			upper = int(min(255, (1.0 + sigma) * v))
+			edged = cv2.Canny(image, lower, upper)
+			cv2.imwrite("edges.jpg",edged)
+		
+			return None
+
 
 	def detectBlocksInDepthImage(self):
 		"""	TODO: Implement a blob detector to find blocks in the depth image """
@@ -266,8 +443,8 @@ class Kinect():
 		vector_x = np.matmul(matrix_A_inv,vector_b)
 	
 		affineMatrixTransformation = np.array([[vector_x[0], vector_x[1], vector_x[2]],
-						   					   [vector_x[3], vector_x[4], vector_x[5]],
-						   					   [	  	  0,	       0, 	   		1]])
+											   [vector_x[3], vector_x[4], vector_x[5]],
+											   [	  	  0,	       0, 	   		1]])
 		
 		self.depth2rgb_affine = vector_x.reshape(2,3)
 		return self.depth2rgb_affine
@@ -297,7 +474,7 @@ class Kinect():
 		pts2 = np.array([[-.305, .305],[-.3050, -.3050],[.3050, -.3050],[.3050, .3050],[0.0, 0.0]]).astype(np.float32)
 		pts1 = coordinates[0:5].astype(np.float32)
 		#print("point s: ",pts1)
-	    #Defining Affine Matrix components in vector_x, RGB coordinates in matrix A, and Depth Coordinates in vector_b
+		#Defining Affine Matrix components in vector_x, RGB coordinates in matrix A, and Depth Coordinates in vector_b
 		vector_x = np.ones((10,1))
 	
 		matrix_A = np.array([[ pts1[0][0], pts1[0][1], 1, 		   0, 		   0, 0],
