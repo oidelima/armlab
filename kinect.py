@@ -227,7 +227,7 @@ class Kinect():
 			edges = cv2.Canny(DepthCM, 100, 150)
 			cv2.imwrite("Dedges.jpg", edges )
 			lines = cv2.HoughLines(edges,1,np.pi/180,200)
-			print("\n d lines : ",lines)
+			#print("\n d lines : ",lines)
 
 			VideoCM = self.currentVideoFrame
 			VideoCM[self.currentDepthFrame > 723, 0] = 0
@@ -239,7 +239,7 @@ class Kinect():
 			edges = cv2.Canny(VideoCM, 150, 200)
 			cv2.imwrite("vedges.jpg", edges)
 			lines = cv2.HoughLines(edges,1,np.pi/180,200)
-			print("\n v lines : ",lines)
+			#print("\n v lines : ",lines)
 
 	def roi(self):
 		pass
@@ -250,7 +250,7 @@ class Kinect():
 			self.block_orientations = []
 			if len(self.block_contours) != 0 :
 				for contour in self.block_contours:
-					print("Checking for contour")
+					#print("Checking for contour")
 					perimeter = cv2.arcLength(contour, True)
 					approx = cv2.approxPolyDP(contour, 0.02 * perimeter, True)
 					#print("\ncontour is : ",approx)
@@ -259,7 +259,7 @@ class Kinect():
 					box = cv2.boxPoints(rect)
 					box = np.int0(box)
 					cv2.drawContours(self.currentVideoFrame,[box],0,(0,0,255),2)
-					print("box coordinates ",box)
+					#print("box coordinates ",box)
 					#self.block_orientations.append((x,y,w,h))
 					#image = cv2.rectangle(self.currentVideoFrame, (x,y), (x+w, y+h), (0,0,0),2)
 					#cv2.imwrite("contours.jpg",image)

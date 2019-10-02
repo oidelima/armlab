@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import kinematics
 #import camera_cal
 
 
@@ -17,6 +18,10 @@ class StateMachine():
 		self.next_state = "idle"
 		self.prev_state = "idle"
 		self.waypoints = []
+		self.grab_position = ()
+		self.drop_position = ()
+		self.click_grab = False
+		self.click_dorp = False
 
 
 	def set_next_state(self, state):
@@ -70,6 +75,8 @@ class StateMachine():
 				self.block_detection()
 			if(self.next_state == "color buckets"):
 				self.color_buckets()
+			if(self.next_state == "click grab drop"):
+				self.clickgrabdrop()
 		
 		if(self.current_state == "record"):
 			self.prev_state = "record"
@@ -97,7 +104,44 @@ class StateMachine():
 			if(self.next_state == "manual"):
 				self.manual()		
 
+		if(self.current_state == "click grab drop"):
+			self.prev_state = "click grab drop"
+			if(self.next_state == "idle"):
+				self.idle()
+			if(self.next_state == "estop"):
+				self.estop()
+
+
 	"""Functions run for each state"""
+	def clickgrabdrop(self):
+		self.status_message = "State: Click and Grab and Click and Drop"
+		self.current_state = "click grab drop"
+		while(not self.grab_position):
+			self.status_message = "Click on block to grab"
+		while(not self.drop_position):
+			self.status_message = "Click on drop position"
+		print("grab and drop are : ",self.grab_position,self.drop_position)
+		#Convert pixel to world coordinates
+		y = self.grab_position[1] -45
+		x = self.grab_position[0] -250
+		z = self.kinect.currentDepthFrame[y][x]
+		print(y,x,z)
+		camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
+		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
+		z_w = 0.94 - .1236*np.tan(z/2842.5 + 1.1863)
+		theta =kinematics.IK([xy_world[0][0]*1000, -xy_world[1][0]*1000, z_w*1000])
+		#theta = kinematics.IK([166.57, -55.87])
+		#self.rexarm.set_positions(theta)
+		#print(xy_world, z_w)
+		self.grab_position = ()
+		self.drop_position = ()
+		if self.prev_state == "manual":
+			self.set_next_state("manual")
+		else:
+			self.set_next_state("idle")
+		
+
+
 	def manual(self):
 		self.status_message = "State: Manual - Use sliders to control arm"
 		self.current_state = "manual"
@@ -119,7 +163,8 @@ class StateMachine():
 		self.status_message = "Executing ..."
 		self.current_state = "execute"
 
-
+		self.rexarm.toggle_gripper()
+		self.rexarm.pause(2)
 		#self.rexarm.set_positions(ja[12])
 			# for i in range(len(self.waypoints)):
 			# 	[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), self.waypoints[i], 4)
@@ -129,7 +174,7 @@ class StateMachine():
 			self.set_next_state("manual")
 		else:
 			self.set_next_state("idle")
-
+		
 
 	def record(self):
 		self.current_state = "record"
