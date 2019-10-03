@@ -150,15 +150,16 @@ def IK(o ,R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])):
 	try:
 		theta3 = acos(np.round((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2), 4)) #two possibilities
 	except:
-		print("Location and orientation not reacheable!")
-		return 0.0
-
+		print("Location and orientation not reacheable upwards! Trying sideways")
+		R = np.array([[0,0,1], [0, 1, 0], [-1, 0, 0]])
+		oc = np.round(np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]]),6)
+		theta3 = acos(np.round((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2), 4)) #two possibilities
+		
 	theta2 = pi/2 - (atan2(oc[2]-L1, sqrt(oc[0]**2 + oc[1]**2)) - atan2((L3+L4)*sin(-theta3), L2 + (L3+L4)*cos(-theta3))) #two possibilities because of theta 3
 
 	R03 = FK_dh([theta1, theta2, theta3, 0, 0, 0], 3)[0:3, 0:3]
 	#R03 = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
 	R36 = np.matmul(np.transpose(R03),R)
-
 	theta5 = atan2(sqrt(1 - R36[2][2] ** 2), R36[2][2])
 
 	if round(R36[0][2],2) == 0.0 and round(R36[1][2],2) == 0.0:
@@ -341,10 +342,10 @@ def ik_test():
 	o = np.array([202.2, 136.45, 17.27*3 - L1])
 	angles[14] = IK(o, R)"""
 
-	print(repr(angles))
-
-	#np.array([-0.3236224698458238, 0.7909097090161495, 1.0645475046976332, -8.171687760688562e-17, 1.2861354398760108, -0.32362246984582393],
-	#		 )
+	#extra tests
+	#[-0.6397397664270065, 0.4260223494513975, 1.4493983633909848, -8.343964209548854e-17, 1.266171940747411, -0.6397397664270064]
+	o = np.array([116.72079563140869, -86.85654401779175, 16.072748008628356])
+	print(IK(o))
 
 ik_test()
 

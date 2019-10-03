@@ -58,14 +58,15 @@ class Rexarm():
     def open_gripper(self):
         """ TODO """
         self.gripper_state = False
-        pass
+        self.gripper.set_position(self.gripper_open_pos)
 
     def close_gripper(self):
         """ TODO """
         self.gripper_state = True
-        pass
+        self.gripper.set_position(self.gripper_closed_pos)
 
     def toggle_gripper(self):
+        print(self.gripper_state)
         if self.gripper_state == False:
             self.gripper_state = True
             self.gripper.set_position(self.gripper_closed_pos)
@@ -76,6 +77,7 @@ class Rexarm():
         
 
     def set_positions(self, joint_angles, update_now = True):
+        
         joint_angles = self.clamp(joint_angles)
         for i,joint in enumerate(self.joints):
             self.position[i] = joint_angles[i]
@@ -169,6 +171,7 @@ class Rexarm():
         #E ->-1.58824929 TO  1.58824929
         #W1 ->-2.6 to 2.6
         #W2 -> -1.7 TO 1.7
+        #W3 -> -5.23 to 5.23
         temp = joint_angles
         
         if abs(temp[1]) > 1.74:
@@ -179,6 +182,8 @@ class Rexarm():
             joint_angles[3] = 2.6*temp[3]/abs(temp[3])
         if abs(temp[4]) > 1.7:
             joint_angles[4] = 1.7*temp[4]/abs(temp[4])
+        if abs(temp[5]) > 2.5:
+            joint_angles[5] = 2.5*temp[5]/abs(temp[5])
         return joint_angles
         
         

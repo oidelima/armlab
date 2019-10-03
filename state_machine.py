@@ -129,9 +129,43 @@ class StateMachine():
 		camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
 		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
 		z_w = 0.94 - .1236*np.tan(z/2842.5 + 1.1863)
-		theta =kinematics.IK([xy_world[0][0]*1000, -xy_world[1][0]*1000, z_w*1000])
+
+		#move to block
+		theta =kinematics.IK([xy_world[0][0]*1000, -xy_world[1][0]*1000, z_w*1000 - 20])
+		print(theta)
+
+
 		#theta = kinematics.IK([166.57, -55.87])
-		#self.rexarm.set_positions(theta)
+		self.rexarm.open_gripper()
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+		self.rexarm.close_gripper()
+
+		#move up
+		theta =kinematics.IK([xy_world[0][0]*1000, -xy_world[1][0]*1000, z_w*1000 + 30])
+		#print(theta)
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+
+		#drop block
+		#Convert pixel to world coordinates
+		y = self.drop_position[1] -45
+		x = self.drop_position[0] -250
+		z = self.kinect.currentDepthFrame[y][x]
+		#print(y,x,z)
+		camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
+		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
+		z_w = 0.94 - .1236*np.tan(z/2842.5 + 1.1863)
+		theta =kinematics.IK([xy_world[0][0]*1000, -xy_world[1][0]*1000, z_w*1000 + 30])
+		#theta = kinematics.IK([166.57, -55.87])
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+		self.rexarm.open_gripper()
+
+
 		#print(xy_world, z_w)
 		self.grab_position = ()
 		self.drop_position = ()
@@ -163,8 +197,7 @@ class StateMachine():
 		self.status_message = "Executing ..."
 		self.current_state = "execute"
 
-		self.rexarm.toggle_gripper()
-		self.rexarm.pause(2)
+		self.rexarm.set_positions([0, 0, 0, 0, 0, 3])
 		#self.rexarm.set_positions(ja[12])
 			# for i in range(len(self.waypoints)):
 			# 	[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), self.waypoints[i], 4)

@@ -12,8 +12,8 @@ class Kinect():
 		self.currentDepthFrame = np.array([])
 		self.previousDepthFrame = np.array([])
 		self.currentHiResFrame = np.array([])
-		freenect.sync_set_autoexposure(False)
-		freenect.sync_set_whitebalance(False)
+		#freenect.sync_set_autoexposure(False)
+		#freenect.sync_set_whitebalance(False)
 		if(freenect.sync_get_depth() == None):
 			self.kinectConnected = False
 		else:

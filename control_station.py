@@ -36,7 +36,7 @@ MAX_Y = 520
 
 """ Serial Port Parameters"""
 BAUDRATE   = 1000000
-DEVICENAME = "/dev/ttyACM1".encode('utf-8')
+DEVICENAME = "/dev/ttyACM0".encode('utf-8')
 
 """Threads"""
 class VideoThread(QThread):
@@ -126,6 +126,7 @@ class Gui(QMainWindow):
 		self.ui.btn_exec.clicked.connect(self.execute)
 		self.ui.btn_task1.clicked.connect(self.record) 
 		self.ui.btn_task2.clicked.connect(self.clear_waypoints) 
+		self.ui.btn_task3.clicked.connect(self.toggle_gripper) 
 		self.ui.btnUser1.setText("Calibrate")
 		self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
 		self.ui.btnUser2.setText("Block Detector")
@@ -234,6 +235,9 @@ class Gui(QMainWindow):
 		self.sm.set_next_state("execute")
 		self.ui.sldrMaxTorque.setValue(50)
 
+	def toggle_gripper(self):
+		self.rexarm.toggle_gripper()
+		#self.rexarm.pause(1)
 
 	def record(self):
 		self.sm.set_next_state("record")
