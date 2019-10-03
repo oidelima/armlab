@@ -77,6 +77,16 @@ class StateMachine():
 				self.color_buckets()
 			if(self.next_state == "click grab drop"):
 				self.clickgrabdrop()
+			if(self.next_state == "pick and stack"):
+				self.pickandstack()
+			if(self.next_state == "line them up"):
+				self.linethemup()
+			if(self.next_state == "stack them high"):
+				self.stackthemhigh()
+			if(self.next_state == "block slider"):
+				self.blockslider()
+			if(self.next_state == "hot swap"):
+				self.hotswap()
 		
 		if(self.current_state == "record"):
 			self.prev_state = "record"
@@ -110,9 +120,89 @@ class StateMachine():
 				self.idle()
 			if(self.next_state == "estop"):
 				self.estop()
+		
+		if(self.current_state == "pick and stack"):
+			self.prev_state = "pick and stack"
+			if(self.next_state == "idle"):
+				self.idle()
+			if(self.next_state == "estop"):
+				self.estop()
+
+		if(self.current_state == "line them up"):
+			self.prev_state = "line them up"
+			if(self.next_state == "idle"):
+				self.idle()
+			if(self.next_state == "estop"):
+				self.estop()
+
+		if(self.current_state == "stack them high"):
+			self.prev_state = "stack them high"
+			if(self.next_state == "idle"):
+				self.idle()
+			if(self.next_state == "estop"):
+				self.estop()
+
+		if(self.current_state == "block slider"):
+			self.prev_state = "block slider"
+			if(self.next_state == "idle"):
+				self.idle()
+			if(self.next_state == "estop"):
+				self.estop()
+
+		if(self.current_state == "hot swap"):
+			self.prev_state = "hot swap"
+			if(self.next_state == "idle"):
+				self.idle()
+			if(self.next_state == "estop"):
+				self.estop()
 
 
 	"""Functions run for each state"""
+
+	def pickandstack(self):
+		print("pick and stack")
+		# find location and orientation of first block on right side in camera coords
+		# find location in world coords
+		# open gripper
+		# move to block
+		# close gripper
+		# move arm up by a given (short) amount
+		# move arm to a specific x,y location
+		# open gripper
+		# repeat for other blocks but each time moving up one block_length mm
+		self.set_next_state("idle")
+
+	def linethemup(self):
+		print("line em up")
+		# you start with a predefined location of where each block is going to end
+		#for every block in board, if block is not in correct position:
+		#move block to correct position
+
+		
+		self.set_next_state("idle")
+
+	def stackthemhigh(self):
+		print("stack em high")
+		#given a predet stacking location make sure there are no blocks there (unless it is black)
+		#if there are blocks there, move them away
+		#given the color order [black red orange ...]
+		#find black block
+		#if no black block, knock down stacks until you find black block
+		#move black block to predet spot
+		#look for red
+		self.set_next_state("idle")
+
+
+	def blockslider(self):
+		print("block slider")
+		self.set_next_state("idle")
+
+	def hotswap(self):
+		print("hot swap")
+		self.set_next_state("idle")
+
+
+
 	def clickgrabdrop(self):
 		self.status_message = "State: Click and Grab and Click and Drop"
 		self.current_state = "click grab drop"
