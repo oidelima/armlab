@@ -77,7 +77,7 @@ class Rexarm():
         
 
     def set_positions(self, joint_angles, update_now = True):
-        
+        print(joint_angles)
         joint_angles = self.clamp(joint_angles)
         for i,joint in enumerate(self.joints):
             self.position[i] = joint_angles[i]

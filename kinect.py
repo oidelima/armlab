@@ -66,7 +66,7 @@ class Kinect():
 		""" Capture frame from Kinect, format is 24bit RGB """
 		if(self.kinectConnected):
 			self.currentVideoFrame = freenect.sync_get_video()[0]
-			self.currentVideoFrame = freenect.sync_get_video_with_res()[0]
+			#self.currentVideoFrame = freenect.sync_get_video_with_res()[0]
 		else:
 			self.loadVideoFrame()
 		self.processVideoFrame()
@@ -141,8 +141,7 @@ class Kinect():
 	def convertBlockDepthFrame(self):
 		""" Converts frame to a colormaped format suitable for Qt Note: this cycles the spectrum over the lowest 8 bits	"""
 
-		try:
-								
+		try:					
 			#Determine ROI mask
 			self.DepthHSVThreshold[...,0] = self.currentDepthFrame
 			self.BlockMask = np.zeros((480,640,1)).astype(np.uint8)
@@ -156,17 +155,16 @@ class Kinect():
 			
 			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,1] = 0
 			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,1] = 0
-			
 			self.DepthHSVThreshold[self.currentDepthFrame > 710 ,2] = 0
 			self.DepthHSVThreshold[self.currentDepthFrame < 650 ,2] = 0
-
-			self.DepthCMThreshold = cv2.cvtColor(self.DepthHSVThreshold,cv2.COLOR_HSV2RGB)
 			
+			self.DepthCMThreshold = cv2.cvtColor(self.DepthHSVThreshold,cv2.COLOR_HSV2RGB)
 			self.detectBlocksInDepthImage()
 			self.roiContours(self.DepthCMThreshold, 400)
 			
 			self.rectangleBlocks()
 			self.blockDetector()
+		
 			img = QImage(self.DepthCMThreshold, self.DepthCMThreshold.shape[1], self.DepthCMThreshold.shape[0], QImage.Format_RGB888)
 			return img
 		except:
@@ -282,11 +280,19 @@ class Kinect():
 		except:
 			return None
 
+	def blockPose(self,color,block):
+		try:
+			contour = cv2.findContours(block, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)	
+			coordinates = self.meanPose(contour[1])
+			self.blocks[color] = {}
+			self.blocks[color]["centroid"] = (coordinates[0],coordinates[1])
+			self.blocks[color]["orientation"] = (coordinates[2], coordinates[3])
+		except:
+			return None
+
 	def detectBlocksInDepthImage(self):
-		
 		image = self.currentVideoFrame.astype(np.float32)
 		image = cv2.GaussianBlur(image,(3,3),0)
-		#black = cv2.bitwise_and(self.currentVideoFrame,self.currentVideoFrame, mask = self.BlockMask)
 		cv2.imwrite("redimage.jpg",cv2.bitwise_and(self.currentVideoFrame[...,0],self.currentVideoFrame[...,0], mask = self.BlockMask))
 		cv2.imwrite("greenimage.jpg",cv2.bitwise_and(self.currentVideoFrame[...,1],self.currentVideoFrame[...,1], mask = self.BlockMask))
 		cv2.imwrite("blueimage.jpg",cv2.bitwise_and(self.currentVideoFrame[...,2],self.currentVideoFrame[...,2], mask = self.BlockMask))
@@ -296,62 +302,26 @@ class Kinect():
 		saturation_image = cv2.bitwise_and(hsv_image[...,1], hsv_image[...,1], mask = self.BlockMask)
 		value_image = cv2.bitwise_and(hsv_image[...,2], hsv_image[...,2], mask = self.BlockMask)
 		
-
 		ret, value_threshold = cv2.threshold(value_image.astype(np.uint8),0,10, cv2.THRESH_BINARY)
 		cv2.imwrite("valuethresh.jpg",value_threshold)
 		
 		if self.kinectCalibrated:
-			green, blue, yellow, red, orange, purple, pink, black = self.colorbuckets()
-
-			contour_green = cv2.findContours(green, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-			coordinates = self.meanPose(contour_green[1])
-			self.blocks["green"] = {}
-			self.blocks["green"]["centroid"] = (coordinates[0],coordinates[1])
-			self.blocks["green"]["orientation"] = (coordinates[2], coordinates[3])	
-
-			contour_blue = cv2.findContours(blue, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-			coordinates = self.meanPose(contour_blue[1])
-			self.blocks["blue"] = {}
-			self.blocks["blue"]["centroid"] = (coordinates[0],coordinates[1])
-			self.blocks["blue"]["orientation"] = (coordinates[2], coordinates[3])
+			try:
+				green, blue, yellow, red, orange, purple, pink, black = self.colorbuckets()
+				
+				self.blockPose("green",green)
+				self.blockPose("blue",blue)
+				self.blockPose("yellow",yellow)
+				self.blockPose("red",red)
+				self.blockPose("pink",pink)
+				self.blockPose("purple",purple)
+				self.blockPose("black",black)
+				self.blockPose("orange",orange)
+			except:
+				return None
 			
-			contour_yellow = cv2.findContours(yellow, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-			coordinates = self.meanPose(contour_yellow[1])
-			self.blocks["yellow"] = {}
-			self.blocks["yellow"]["centroid"] = (coordinates[0],coordinates[1])
-			self.blocks["yellow"]["orientation"] = (coordinates[2], coordinates[3])
 
-			contour_red = cv2.findContours(red, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-			coordinates = self.meanPose(contour_red[1])
-			self.blocks["red"] = {}
-			self.blocks["red"]["centroid"] = (coordinates[0],coordinates[1])
-			self.blocks["red"]["orientation"] = (coordinates[2], coordinates[3])
-
-			contour_orange = cv2.findContours(orange, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-			coordinates = self.meanPose(contour_orange[1])
-			self.blocks["orange"] = {}
-			self.blocks["orange"]["centroid"] = (coordinates[0],coordinates[1])
-			self.blocks["orange"]["orientation"] = (coordinates[2], coordinates[3])
-
-			contour_purple = cv2.findContours(purple, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-			coordinates = self.meanPose(contour_purple[1])
-			self.blocks["purple"] = {}
-			self.blocks["purple"]["centroid"] = (coordinates[0],coordinates[1])
-			self.blocks["purple"]["orientation"] = (coordinates[2], coordinates[3])
-
-			contour_orange = cv2.findContours(orange, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-			coordinates = self.meanPose(contour_orange[1])
-			self.blocks["pink"] = {}
-			self.blocks["pink"]["centroid"] = (coordinates[0],coordinates[1])
-			self.blocks["pink"]["orientation"] = (coordinates[2], coordinates[3])
-
-			contour_black = cv2.findContours(black, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-			coordinates = self.meanPose(contour_black[1])
-			self.blocks["black"] = {}
-			self.blocks["black"]["centroid"] = (coordinates[0],coordinates[1])
-			self.blocks["black"]["orientation"] = (coordinates[2], coordinates[3])
-
-		print(self.blocks)
+		#print(self.blocks)
 		contours = cv2.findContours(value_threshold, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 		self.block_contours = []
 		if len(contours) != 0:
@@ -400,20 +370,6 @@ class Kinect():
 		self.block_contours = contours 
 
 	def colorbuckets(self):	
-		height_mask = self.currentDepthFrame
-		height_mask[height_mask > 725] = 0
-		height_mask[height_mask < 715] = 0
-		image = self.currentVideoFrame
-		image = cv2.GaussianBlur(image,(3,3),0)
-		image = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
-		value = image[...,2]
-		ret, thresh = cv2.threshold(value,210,255,cv2.THRESH_BINARY)
-		height_mask = height_mask.astype(np.uint8)
-
-		self.roi = cv2.bitwise_and(height_mask, thresh.astype(np.uint8))
-		ret, self.roi = cv2.threshold(self.roi,127,255,cv2.THRESH_BINARY)
-		image = cv2.GaussianBlur(self.roi,(7,7),0)
-		edges = self.auto_canny(self.roi,.15)
 
 		image = self.currentVideoFrame
 		image = cv2.GaussianBlur(image,(3,3),0)
@@ -438,30 +394,8 @@ class Kinect():
 		purple = cv2.bitwise_and(hue_purple, hue_purple, mask = self.BlockMask)
 		orange = cv2.bitwise_and(hue_orange, hue_orange, mask = self.BlockMask)
 		black = cv2.bitwise_and(value_black,value_black, mask = self.BlockMask)
-		cv2.imwrite("black.jpg",black)
-		image = self.currentVideoFrame
-		image = cv2.GaussianBlur(image,(3,3),0)
-		cv2.imwrite("red.jpg",red)
-		cv2.imwrite("green.jpg",green)
-		cv2.imwrite("blue.jpg",blue)
-		cv2.imwrite("yellow.jpg",yellow)
-		cv2.imwrite("pink.jpg",pink)
-		cv2.imwrite("orange.jpg",orange)
-		cv2.imwrite("purple.jpg",purple)
-		image = self.currentVideoFrame
-		image = cv2.GaussianBlur(image,(3,3),0)
 
 		return green, blue, yellow, red, orange, purple, pink, black
-
-	def workspaceedges(self):
-			v = np.median(image)
-			# apply automatic Canny edge detection using the computed median
-			lower = int(max(0, (1.0 - sigma) * v))
-			upper = int(min(255, (1.0 + sigma) * v))
-			edged = cv2.Canny(image, lower, upper)
-			cv2.imwrite("edges.jpg",edged)
-		
-			return None
 
 	def getAffineTransform(self, coord1, coord2):
 		"""
@@ -531,13 +465,12 @@ class Kinect():
 		return self.intrinsic_matrix
 	
 	def affineworkspace(self, coordinates):
-		d = 0.265
+		d = 0.305
 		pts2 = np.array([[-d, d],[-d, -d],[d, -d],[d, d],[0.0, 0.0]]).astype(np.float32)
-		#pts1 = coordinates[0:5].astype(np.float32)
-		coordinates = self.apriltagtransformation()
-		pts1 = [coordinates[1], coordinates[0], coordinates[2], coordinates[3]]
+		pts1 = coordinates[0:5].astype(np.float32)
+		"""coordinates = self.apriltagtransformation()
+		pts1 = [coordinates[1], coordinates[0], coordinates[2], coordinates[3]]"""
 		
-		#print("point s: ",pts1)
 		#Defining Affine Matrix components in vector_x, RGB coordinates in matrix A, and Depth Coordinates in vector_b
 		vector_x = np.ones((10,1))
 	
@@ -582,10 +515,8 @@ class Kinect():
 										[-rot_vec[1], rot_vec[0], 0.0]])
 		self.translation_matrix = trans_vec
 		return trans_vec
-
-		# def apriltagdetection(self):
 	
-	def apriltagtransformation(self):
+""" def apriltagtransformation(self): 
 		detector = apriltag("tagStandard41h12", threads=4, decimate=2.0)
 		d = .060
 		object_points = np.array([[-d,-d,0.0],
@@ -598,10 +529,76 @@ class Kinect():
 		detections = detector.detect(image)		
 		translation_vector = []
 		for tag in detections:
-			#print("\ntag ", tag)
 			image_points = tag['lb-rb-rt-lt']
 			translation = self.workspaceTransform(object_points, image_points)
 			x_average = (image_points[0][0] + image_points[1][0] + image_points[2][0] + image_points[3][0])/4
 			y_average = (image_points[0][1] + image_points[1][1] + image_points[2][1] + image_points[3][1])/4
 			translation_vector.append([x_average,y_average])
-		return translation_vector
+		return translation_vector"""
+
+""" 	contour_green = cv2.findContours(green, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)	
+				coordinates = self.meanPose(contour_green[1])
+				self.blocks["green"] = {}
+				self.blocks["green"]["centroid"] = (coordinates[0],coordinates[1])
+				self.blocks["green"]["orientation"] = (coordinates[2], coordinates[3])
+
+				
+				contour_blue = cv2.findContours(blue, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+				coordinates = self.meanPose(contour_blue[1])
+				self.blocks["blue"] = {}
+				self.blocks["blue"]["centroid"] = (coordinates[0],coordinates[1])
+				self.blocks["blue"]["orientation"] = (coordinates[2], coordinates[3])
+				
+				contour_yellow = cv2.findContours(yellow, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+				coordinates = self.meanPose(contour_yellow[1])
+				self.blocks["yellow"] = {}
+				self.blocks["yellow"]["centroid"] = (coordinates[0],coordinates[1])
+				self.blocks["yellow"]["orientation"] = (coordinates[2], coordinates[3])
+
+				contour_red = cv2.findContours(red, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+				coordinates = self.meanPose(contour_red[1])
+				self.blocks["red"] = {}
+				self.blocks["red"]["centroid"] = (coordinates[0],coordinates[1])
+				self.blocks["red"]["orientation"] = (coordinates[2], coordinates[3])
+
+				contour_orange = cv2.findContours(orange, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+				coordinates = self.meanPose(contour_orange[1])
+				self.blocks["orange"] = {}
+				self.blocks["orange"]["centroid"] = (coordinates[0],coordinates[1])
+				self.blocks["orange"]["orientation"] = (coordinates[2], coordinates[3])
+				
+				contour_purple = cv2.findContours(purple, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+				coordinates = self.meanPose(contour_purple[1])
+				self.blocks["purple"] = {}
+				self.blocks["purple"]["centroid"] = (coordinates[0],coordinates[1])
+				self.blocks["purple"]["orientation"] = (coordinates[2], coordinates[3])
+
+				contour_pink = cv2.findContours(pink, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+				coordinates = self.meanPose(contour_pink[1])
+				self.blocks["pink"] = {}
+				self.blocks["pink"]["centroid"] = (coordinates[0],coordinates[1])
+				self.blocks["pink"]["orientation"] = (coordinates[2], coordinates[3])
+
+				contour_black = cv2.findContours(black, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+				coordinates = self.meanPose(contour_black[1])
+				self.blocks["black"] = {}
+				self.blocks["black"]["centroid"] = (coordinates[0],coordinates[1])
+				self.blocks["black"]["orientation"] = (coordinates[2], coordinates[3]) """
+
+""" 	cv2.imwrite("red.jpg",red)
+		cv2.imwrite("green.jpg",green)
+		cv2.imwrite("blue.jpg",blue)
+		cv2.imwrite("yellow.jpg",yellow)
+		cv2.imwrite("pink.jpg",pink)
+		cv2.imwrite("orange.jpg",orange)
+		cv2.imwrite("purple.jpg",purple) """
+
+""" 		def workspaceedges(self):
+			v = np.median(image)
+			# apply automatic Canny edge detection using the computed median
+			lower = int(max(0, (1.0 - sigma) * v))
+			upper = int(min(255, (1.0 + sigma) * v))
+			edged = cv2.Canny(image, lower, upper)
+			cv2.imwrite("edges.jpg",edged)
+		
+			return None """

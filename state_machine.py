@@ -158,26 +158,154 @@ class StateMachine():
 
 
 	"""Functions run for each state"""
+	def worldCoordinates(self,x,y):
+		z = self.kinect.currentDepthFrame[int(y)][int(x)]
+		camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
+		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates)
+		z = .1236*np.tan(z/2842.5 + 1.1863) 
+		x = xy_world[0] 
+		y = -xy_world[1]
+		z = .94 - z
+		return x,y,z
 
 	def pickandstack(self):
-		print("pick and stack")
-		# find location and orientation of first block on right side in camera coords
-		# find location in world coords
-		# open gripper
-		# move to block
-		# close gripper
-		# move arm up by a given (short) amount
-		# move arm to a specific x,y location
-		# open gripper
-		# repeat for other blocks but each time moving up one block_length mm
-		self.set_next_state("idle")
+		#predetermined stacking position
+		x_pred = -154.4
+		y_pred = -101.84
 
+		#moving above red block
+		x = self.kinect.blocks["red"]["centroid"][0] 
+		y = self.kinect.blocks["red"]["centroid"][1] 
+
+		
+		x,y,z = self.worldCoordinates(x,y)
+		print("Red coordinates",x,y, z)
+
+
+		theta =kinematics.IK([x*1000, y*1000,  50])
+		#theta = kinematics.IK([166.57, -55.87])
+		self.rexarm.open_gripper()
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+
+		theta =kinematics.IK([x*1000, y*1000,  0])
+		#theta = kinematics.IK([166.57, -55.87])
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+		self.rexarm.close_gripper()
+
+		#move up
+		#print([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		#print(theta)
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+
+		#move to predetermined position
+		theta =kinematics.IK([x_pred, y_pred, 30])
+		#theta = kinematics.IK([166.57, -55.87])
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+		self.rexarm.open_gripper()
+
+  ###########################################
+
+		#moving above bluee block
+		x = self.kinect.blocks["blue"]["centroid"][0] 
+		y = self.kinect.blocks["blue"]["centroid"][1] 
+
+		
+		x,y,z = self.worldCoordinates(x,y)
+		print("Red coordinates",x,y, z)
+
+
+		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		#theta = kinematics.IK([166.57, -55.87])
+		self.rexarm.open_gripper()
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+
+		theta =kinematics.IK([x*1000, y*1000, z*1000 -20])
+		#theta = kinematics.IK([166.57, -55.87])
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+		self.rexarm.close_gripper()
+
+		#move up
+		#print([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		#print(theta)
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+
+		#move to predetermined position
+		theta =kinematics.IK([x_pred, y_pred, 100])
+		#theta = kinematics.IK([166.57, -55.87])
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+		self.rexarm.open_gripper()
+
+		###########################################
+
+		#moving above green block
+		x = self.kinect.blocks["green"]["centroid"][0] 
+		y = self.kinect.blocks["green"]["centroid"][1] 
+
+		
+		x,y,z = self.worldCoordinates(x,y)
+		print("Red coordinates",x,y, z)
+
+
+		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		#theta = kinematics.IK([166.57, -55.87])
+		self.rexarm.open_gripper()
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+
+		theta =kinematics.IK([x*1000, y*1000, z*1000 -20])
+		#theta = kinematics.IK([166.57, -55.87])
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+		self.rexarm.close_gripper()
+
+		#move up
+		#print([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		#print(theta)
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+
+		#move to predetermined position
+		theta =kinematics.IK([x_pred, y_pred, 150])
+		#theta = kinematics.IK([166.57, -55.87])
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
+		self.rexarm.open_gripper()
+
+		
+		self.set_next_state("idle")
+		
 	def linethemup(self):
 		print("line em up")
 		# you start with a predefined location of where each block is going to end
 		#for every block in board, if block is not in correct position:
 		#move block to correct position
-
+		theta =kinematics.IK([92, -126, 0])
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+		self.rexarm.pause(2)
 		
 		self.set_next_state("idle")
 
@@ -220,7 +348,7 @@ class StateMachine():
 		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
 		z_w = 0.94 - .1236*np.tan(z/2842.5 + 1.1863)
 
-		#move to block
+		#move to block 1
 		theta =kinematics.IK([xy_world[0][0]*1000, -xy_world[1][0]*1000, z_w*1000 - 20])
 		print(theta)
 
