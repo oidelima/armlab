@@ -613,7 +613,7 @@ class Ui_MainWindow(object):
 		self.PixelCoordLabel.setText(_translate("MainWindow", "Mouse Coordinates:", None))
 		self.btn_task1.setText(_translate("MainWindow", "RECORD WAYPOINT", None))
 		self.btn_task2.setText(_translate("MainWindow", "CLEAR WAYPOINTS", None))
-		self.btn_task3.setText(_translate("MainWindow", "TASK 3", None))
+		self.btn_task3.setText(_translate("MainWindow", "TOGGLE GRIPPER", None))
 		self.btn_task4.setText(_translate("MainWindow", "TASK 4", None))
 		self.btn_exec_6.setText(_translate("MainWindow", "TASK 5", None))
 		self.btnUser1.setText(_translate("MainWindow", "USER 1", None))

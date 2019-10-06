@@ -127,6 +127,7 @@ class Gui(QMainWindow):
 		self.ui.btn_exec.clicked.connect(self.execute)
 		self.ui.btn_task1.clicked.connect(self.record) 
 		self.ui.btn_task2.clicked.connect(self.clear_waypoints) 
+		self.ui.btn_task3.clicked.connect(self.toggle_gripper) 
 		self.ui.btnUser1.setText("Calibrate")
 		self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
 		self.ui.btnUser2.setText("Block Detector")
@@ -135,6 +136,16 @@ class Gui(QMainWindow):
 		self.ui.btnUser2.clicked.connect(partial(self.sm.set_next_state, "color buckets"))
 		self.ui.btnUser3.setText("Click Grab/Drop Mode")
 		self.ui.btnUser3.clicked.connect(partial(self.sm.set_next_state, "click grab drop"))
+		self.ui.btnUser4.setText("Pick n' Stack")
+		self.ui.btnUser4.clicked.connect(partial(self.sm.set_next_state, "pick and stack"))
+		self.ui.btnUser5.setText("Line 'em up")
+		self.ui.btnUser5.clicked.connect(partial(self.sm.set_next_state, "line them up"))
+		self.ui.btnUser6.setText("Stack 'em high")
+		self.ui.btnUser6.clicked.connect(partial(self.sm.set_next_state, "stack them high"))
+		self.ui.btnUser7.setText("Block slider")
+		self.ui.btnUser7.clicked.connect(partial(self.sm.set_next_state, "block slider"))
+		self.ui.btnUser8.setText("Hot swap")
+		self.ui.btnUser8.clicked.connect(partial(self.sm.set_next_state, "hot swap"))
 		self.ui.sldrBase.valueChanged.connect(self.sliderChange)
 		self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
 		self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
@@ -235,6 +246,9 @@ class Gui(QMainWindow):
 		self.sm.set_next_state("execute")
 		self.ui.sldrMaxTorque.setValue(50)
 
+	def toggle_gripper(self):
+		self.rexarm.toggle_gripper()
+		#self.rexarm.pause(1)
 
 	def record(self):
 		self.sm.set_next_state("record")
