@@ -239,17 +239,20 @@ class Kinect():
 		return corners
 
 	def orientationBlock(self, corners):
-				x1 = corners[0][0]
-				y1 = corners[0][1]
-				x2 = corners[1][0]
-				y2 = corners[1][1]
-				x3 = corners[2][0]
-				y3 = corners[2][1]
-				x4 = corners[3][0]
-				y4 = corners[3][1]
-				slope1 = math.atan2((y1 - y2),(x1 - x2)) 
-				slope2 = math.atan2((y3 - y4),(x3 - x4))
-				return slope1,slope2
+		try:
+			x1 = corners[0][0]
+			y1 = corners[0][1]
+			x2 = corners[1][0]
+			y2 = corners[1][1]
+			x3 = corners[2][0]
+			y3 = corners[2][1]
+			x4 = corners[3][0]
+			y4 = corners[3][1]
+			slope1 = math.atan2((y1 - y4),(x1 - x4)) 
+			slope2 = math.atan2((y2 - y3),(x2 - x3))
+			return slope1,slope2
+		except:
+			return None
 
 	def meanPose(self, contours):
 		try:
@@ -581,7 +584,6 @@ class Kinect():
 		return trans_vec
 
 		# def apriltagdetection(self):
-	
 	
 	def apriltagtransformation(self):
 		detector = apriltag("tagStandard41h12", threads=4, decimate=2.0)
