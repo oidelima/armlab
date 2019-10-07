@@ -136,36 +136,32 @@ def FK_pox(joint_angles):
 	"""
 
 def IK(o ,R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])):
+
 	""" TODO: Calculate inverse kinematics for rexarm return the required joint angles """
-
-
 
 	oc = np.round(np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]]),6)
 
-	#if np.round(oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2,4) > np.round((L2+ L3+ L4)**2,4) or np.round(oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2,4) < np.round((L2- L3- L4)**2,4):
-	#	print("out_of_range")
-#		R = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
-
 	theta1 = atan2(oc[1], oc[0])  #two possibilities
-	#print(np.round((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2).astype(np.double), 4))
+
+
 	try:
-		
-		print((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2))
-		theta3 = acos((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2)) #two possibilities
+		print("try: ", (oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2))
+		theta3 = acos(((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2))//0.01*0.01) #two possibilities
 	except:
 		print("Location and orientation not reacheable upwards! Trying sideways")
-		R = np.array([[0,0,1], [0, 1, 0], [-1, 0, 0]])
-		print()
+		R = np.array([[0, -sin(theta1), cos(theta1)], [0, cos(theta1), sin(theta1)], [-1, 0, 0]])
 		oc = np.round(np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]]).astype(np.double),4)
+		print(theta1)
+		print(oc)
+		print("Except ", (oc[0] ** 2 + oc[1] ** 2 + (oc[2] - L1) ** 2 - (L3 + L4) ** 2 - L2 ** 2) / (2 * (L3 + L4) * L2))
 		#print(np.round((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2), 4))
-		theta3 = acos((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2)) #two possibilities
+		theta3 = acos(((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2))//0.01*0.01) # two possibilities
 		
 	theta2 = pi/2 - (atan2(oc[2]-L1, sqrt(oc[0]**2 + oc[1]**2)) - atan2((L3+L4)*sin(-theta3), L2 + (L3+L4)*cos(-theta3))) #two possibilities because of theta 3
 
 	R03 = FK_dh([theta1, theta2, theta3, 0, 0, 0], 3)[0:3, 0:3]
 	#R03 = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
 	R36 = np.matmul(np.transpose(R03),R)
-
 
 	theta5 = atan2(sqrt(1 - R36[2][2] ** 2), R36[2][2])
 
@@ -179,9 +175,6 @@ def IK(o ,R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])):
 	else:
 		theta4 = atan2(-R36[1][2], -R36[0][2])
 		theta6 = atan2(-R36[2][1], R36[2][0])
-
-
-
 
 	return [theta1, theta2, theta3, theta4, theta5, theta6]
 
@@ -347,14 +340,14 @@ def ik_test():
 
 	'''R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
 	o = np.array([202.2, 206.45, 17.27*3 - L1])
-	angles[14] = IK(o, R)"""
+	angles[14] = IK(o, R)'''
 
 	#extra tests
 	#[-0.6397397664270065, 0.4260223494513975, 1.4493983633909848, -8.343964209548854e-17, 1.266171940747411, -0.6397397664270064]
-	o = np.array([116.72079563140869, -86.85654401779175, 16.072748008628356])
+	o = np.array([200, -200, 0.072748008628356])
 	print(IK(o))
 
-#ik_test()
+ik_test()
 
 # def get_euler_angles_from_T(T):
 # 	""" TODO: implement this function return the Euler angles from a T matrix """
