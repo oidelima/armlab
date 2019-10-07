@@ -170,7 +170,7 @@ class StateMachine():
 
 	def pickandstack(self):
 		#predetermined stacking position
-		x_pred = -154.4
+		x_pred = -150.4
 		y_pred = -101.84
 
 		#moving above red block
@@ -198,14 +198,14 @@ class StateMachine():
 
 		#move up
 		#print([x*1000, y*1000, z*1000 + 30])
-		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x*1000, y*1000, 50])
 		#print(theta)
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
 		self.rexarm.pause(2)
 
 		#move to predetermined position
-		theta =kinematics.IK([x_pred, y_pred, 30])
+		theta =kinematics.IK([x_pred, y_pred, 50])
 		#theta = kinematics.IK([166.57, -55.87])
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
@@ -223,14 +223,14 @@ class StateMachine():
 		print("Red coordinates",x,y, z)
 
 
-		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x*1000, y*1000, 50])
 		#theta = kinematics.IK([166.57, -55.87])
 		self.rexarm.open_gripper()
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
 		self.rexarm.pause(2)
 
-		theta =kinematics.IK([x*1000, y*1000, z*1000 -20])
+		theta =kinematics.IK([x*1000, y*1000, 0])
 		#theta = kinematics.IK([166.57, -55.87])
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
@@ -239,7 +239,7 @@ class StateMachine():
 
 		#move up
 		#print([x*1000, y*1000, z*1000 + 30])
-		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x*1000, y*1000, 50])
 		#print(theta)
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
@@ -264,14 +264,14 @@ class StateMachine():
 		print("Red coordinates",x,y, z)
 
 
-		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x*1000, y*1000, 50])
 		#theta = kinematics.IK([166.57, -55.87])
 		self.rexarm.open_gripper()
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
 		self.rexarm.pause(2)
 
-		theta =kinematics.IK([x*1000, y*1000, z*1000 -20])
+		theta =kinematics.IK([x*1000, y*1000, 0])
 		#theta = kinematics.IK([166.57, -55.87])
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
@@ -280,7 +280,7 @@ class StateMachine():
 
 		#move up
 		#print([x*1000, y*1000, z*1000 + 30])
-		theta =kinematics.IK([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x*1000, y*1000, 50])
 		#print(theta)
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
@@ -310,14 +310,88 @@ class StateMachine():
 		self.set_next_state("idle")
 
 	def stackthemhigh(self):
+		colors = ["black", "red", "orange", "yellow", "green", "blue", "violet", "pink"]
+		temp_locs = [(100, 100), (120, 120), (140, 140), (160, 160), (180,180), (200, 200), (220, 220)]
+		x_pred = -130.4
+		y_pred = 101.84
+		for i, color in enumerate(colors):
+			count = i
+			while type(self.kinect.blocks[color]["centroid"][0]) != "float":
+				count = count + 1
+				x = self.kinect.blocks[colors[count]]["centroid"][0]
+				y = self.kinect.blocks[colors[count]]["centroid"][1]
+
+				x, y, z = self.worldCoordinates(x, y)
+
+				theta = kinematics.IK([x * 1000, y * 1000, 50])
+				# theta = kinematics.IK([166.57, -55.87])
+				self.rexarm.open_gripper()
+				[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+				self.tp.execute_plan([q, v])
+				self.rexarm.pause(2)
+
+				theta = kinematics.IK([x * 1000, y * 1000, 0])
+				# theta = kinematics.IK([166.57, -55.87])
+				[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+				self.tp.execute_plan([q, v])
+				self.rexarm.pause(2)
+				self.rexarm.close_gripper()
+
+				# move up
+				# print([x*1000, y*1000, z*1000 + 30])
+				theta = kinematics.IK([x * 1000, y * 1000, 40 * i + 50)
+					# print(theta)
+				[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+				self.tp.execute_plan([q, v])
+				self.rexarm.pause(2)
+
+				# move to predetermined position
+				theta = kinematics.IK([temp_locs[count-1][0],temp_locs[count-1][1], 40 * i + 50])
+					# theta = kinematics.IK([166.57, -55.87])
+				[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+				self.tp.execute_plan([q, v])
+				self.rexarm.pause(2)
+				self.rexarm.open_gripper()
+
+			x = self.kinect.blocks[color]["centroid"][0]
+			y = self.kinect.blocks[color]["centroid"][1]
+
+			x, y, z = self.worldCoordinates(x, y)
+
+			theta = kinematics.IK([x * 1000, y * 1000, 50])
+			# theta = kinematics.IK([166.57, -55.87])
+			self.rexarm.open_gripper()
+			[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+			self.tp.execute_plan([q, v])
+			self.rexarm.pause(2)
+
+			theta = kinematics.IK([x * 1000, y * 1000, 0])
+			# theta = kinematics.IK([166.57, -55.87])
+			[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+			self.tp.execute_plan([q, v])
+			self.rexarm.pause(2)
+			self.rexarm.close_gripper()
+
+			# move up
+			# print([x*1000, y*1000, z*1000 + 30])
+			theta = kinematics.IK([x * 1000, y * 1000, 40*i+ 50)
+			# print(theta)
+			[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+			self.tp.execute_plan([q, v])
+			self.rexarm.pause(2)
+
+			# move to predetermined position
+			theta = kinematics.IK([x_pred, y_pred, 40*i + 50])
+			# theta = kinematics.IK([166.57, -55.87])
+			[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+			self.tp.execute_plan([q, v])
+			self.rexarm.pause(2)
+			self.rexarm.open_gripper()
+
+				
+
 		print("stack em high")
-		#given a predet stacking location make sure there are no blocks there (unless it is black)
-		#if there are blocks there, move them away
-		#given the color order [black red orange ...]
-		#find black block
-		#if no black block, knock down stacks until you find black block
-		#move black block to predet spot
-		#look for red
+
 		self.set_next_state("idle")
 
 
