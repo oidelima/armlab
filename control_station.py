@@ -36,7 +36,7 @@ MAX_Y = 520
 
 """ Serial Port Parameters"""
 BAUDRATE   = 1000000
-DEVICENAME = "/dev/ttyACM1".encode('utf-8')
+DEVICENAME = "/dev/ttyACM0".encode('utf-8')
 
 """Threads"""
 class VideoThread(QThread):
@@ -109,10 +109,12 @@ class Gui(QMainWindow):
 		elbw = DXL_MX(port_num, 3)
 		wrst = DXL_AX(port_num, 4)
 		wrst2 = DXL_AX(port_num, 5)
+		wrst3 = DXL_XL(port_num, 6)
+		grip = DXL_XL(port_num, 7)
 
 		"""Objects Using Other Classes"""
 		self.kinect = Kinect()
-		self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2),0)
+		self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2, wrst3),grip)
 		self.tp = TrajectoryPlanner(self.rexarm)
 		self.sm = StateMachine(self.rexarm, self.tp, self.kinect)
 	
@@ -124,16 +126,33 @@ class Gui(QMainWindow):
 		self.ui.btn_exec.clicked.connect(self.execute)
 		self.ui.btn_task1.clicked.connect(self.record) 
 		self.ui.btn_task2.clicked.connect(self.clear_waypoints) 
+		self.ui.btn_task3.clicked.connect(self.toggle_gripper) 
 		self.ui.btnUser1.setText("Calibrate")
 		self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
 		self.ui.btnUser2.setText("Block Detector")
 		self.ui.btnUser2.clicked.connect(partial(self.sm.set_next_state, "block detection"))
+		self.ui.btnUser2.setText("Color Buckets")
+		self.ui.btnUser2.clicked.connect(partial(self.sm.set_next_state, "color buckets"))
+		self.ui.btnUser3.setText("Click Grab/Drop Mode")
+		self.ui.btnUser3.clicked.connect(partial(self.sm.set_next_state, "click grab drop"))
+		self.ui.btnUser4.setText("Pick n' Stack")
+		self.ui.btnUser4.clicked.connect(partial(self.sm.set_next_state, "pick and stack"))
+		self.ui.btnUser5.setText("Line 'em up")
+		self.ui.btnUser5.clicked.connect(partial(self.sm.set_next_state, "line them up"))
+		self.ui.btnUser6.setText("Stack 'em high")
+		self.ui.btnUser6.clicked.connect(partial(self.sm.set_next_state, "stack them high"))
+		self.ui.btnUser7.setText("Block slider")
+		self.ui.btnUser7.clicked.connect(partial(self.sm.set_next_state, "block slider"))
+		self.ui.btnUser8.setText("Hot swap")
+		self.ui.btnUser8.clicked.connect(partial(self.sm.set_next_state, "hot swap"))
 		self.ui.sldrBase.valueChanged.connect(self.sliderChange)
 		self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
 		self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
 		self.ui.sldrWrist.valueChanged.connect(self.sliderChange)
 
 		self.ui.sldrWrist2.valueChanged.connect(self.sliderChange)
+		self.ui.sldrWrist3.valueChanged.connect(self.sliderChange)
+		self.ui.sldrGrip1.valueChanged.connect(self.sliderChange)
 
 		self.ui.sldrMaxTorque.valueChanged.connect(self.sliderChange)
 		self.ui.sldrSpeed.valueChanged.connect(self.sliderChange)
@@ -226,6 +245,9 @@ class Gui(QMainWindow):
 		self.sm.set_next_state("execute")
 		self.ui.sldrMaxTorque.setValue(50)
 
+	def toggle_gripper(self):
+		self.rexarm.toggle_gripper()
+		#self.rexarm.pause(1)
 
 	def record(self):
 		self.sm.set_next_state("record")
@@ -254,7 +276,8 @@ class Gui(QMainWindow):
 						   self.ui.sldrShoulder.value()*D2R,
 						   self.ui.sldrElbow.value()*D2R,
 						   self.ui.sldrWrist.value()*D2R,
-						   self.ui.sldrWrist2.value()*D2R])
+						   self.ui.sldrWrist2.value()*D2R,
+						   self.ui.sldrWrist3.value()*D2R])
 		self.rexarm.set_positions(joint_positions, update_now = False)
 
 	def directControlChk(self, state):
@@ -287,7 +310,7 @@ class Gui(QMainWindow):
 				self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" % (x,y,z))
 				camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
 				xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
-				z_w = .1236*np.tan(z/2842.5 + 1.1863) 
+				z_w = .1236*np.tan(z/2842.5 + 1.1863) - 0.94
 				self.ui.rdoutMouseWorld.setText("(%.2f,%.2f,%.2f)" % (xy_world[0], xy_world[1], z_w))
 
 	def mousePressEvent(self, QMouseEvent):
@@ -296,17 +319,27 @@ class Gui(QMainWindow):
 		"""
 
 		""" Get mouse posiiton """
+		#print("mouse event")
 		x = QMouseEvent.x()
 		y = QMouseEvent.y()
 
 		""" If mouse position is not over the camera image ignore """
 		if ((x < MIN_X) or (x > MAX_X) or (y < MIN_Y) or (y > MAX_Y)): return
-
-		""" Change coordinates to image axis """
-		self.kinect.last_click[0] = x - MIN_X 
-		self.kinect.last_click[1] = y - MIN_Y
-		self.kinect.new_click = True
+		if self.sm.current_state == "click grab drop":
+			if not self.sm.grab_position:
+				self.sm.grab_position = (x,y)
+				print("Have grab position")
+				return
+			if self.sm.grab_position:
+				self.sm.drop_position = (x,y)
+				print("Have drop position")
+		if self.sm.current_state == "calibrate":
+			""" Change coordinates to image axis """
+			self.kinect.last_click[0] = x - MIN_X 
+			self.kinect.last_click[1] = y - MIN_Y
+			self.kinect.new_click = True
 		#print(self.kinect.last_click)
+
 
 """main function"""
 def main():
