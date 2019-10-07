@@ -16,8 +16,8 @@ L1 = 42.8
 L2 = 99.29
 L3 = 67.2
 L4 = 42.3
-L5 = 47.6
-L6 = 59.8
+L5 = 48.42
+L6 = 35.88
 
 
 def FK_dh(joint_angles, link):
@@ -135,10 +135,15 @@ def FK_pox(joint_angles):
 
 	"""
 
-def IK(o , R):
+def IK(o ,R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])):
 	""" TODO: Calculate inverse kinematics for rexarm return the required joint angles """
 
+
 	oc = np.round(np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]]),6)
+
+	if np.round(oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2,4) > np.round((L2+ L3+ L4)**2,4) or np.round(oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2,4) < np.round((L2- L3- L4)**2,4):
+		print("out_of_range")
+#		R = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
 
 	theta1 = atan2(oc[1], oc[0])  #two possibilities
 	print(np.round((oc[0]**2 + oc[1]**2 + (oc[2]-L1)**2 - (L3+L4)**2 - L2**2)/(2*(L3+L4)*L2), 4))
@@ -154,16 +159,21 @@ def IK(o , R):
 	#R03 = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
 	R36 = np.matmul(np.transpose(R03),R)
 
+	theta5 = atan2(sqrt(1 - R36[2][2] ** 2), R36[2][2])
 
 	if round(R36[0][2],2) == 0.0 and round(R36[1][2],2) == 0.0:
 		#infinitely many solutions
 		theta4 = 0.0
 		theta6 = 0.0
-	else:
+	elif sin(theta5) >= 0:
 		theta4 = atan2(R36[1][2], R36[0][2])
 		theta6 = atan2(R36[2][1], -R36[2][0])
+	else:
+		theta4 = atan2(-R36[1][2], -R36[0][2])
+		theta6 = atan2(-R36[2][1], R36[2][0])
 
-	theta5 = atan2(sqrt(1 - R36[2][2]**2), R36[2][2])
+
+
 
 	return [theta1, theta2, theta3, theta4, theta5, theta6]
 
