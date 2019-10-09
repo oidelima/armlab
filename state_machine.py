@@ -170,54 +170,57 @@ class StateMachine():
 
 	def pickandstack(self):
 		#predetermined stacking position
-		x_pred = -150.4
-		y_pred = -101.84
+		x_pred = -150.0
+		y_pred = -20.0
 
 		#moving above red block
 		x = self.kinect.blocks["red"]["centroid"][0] 
 		y = self.kinect.blocks["red"]["centroid"][1] 
-
-		
 		x,y,z = self.worldCoordinates(x,y)
-		print("Red coordinates",x,y, z)
-
+		print("Red coordinates",x,y,z)
 
 		theta =kinematics.IK([x*1000, y*1000,  50])
 		#theta = kinematics.IK([166.57, -55.87])
 		self.rexarm.open_gripper()
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
 
 		theta =kinematics.IK([x*1000, y*1000,  0])
 		#theta = kinematics.IK([166.57, -55.87])
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
 		self.rexarm.close_gripper()
 
 		#move up
 		#print([x*1000, y*1000, z*1000 + 30])
-		theta =kinematics.IK([x*1000, y*1000, 50])
+		theta =kinematics.IK([x*1000, y*1000, 100])
 		#print(theta)
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
+
 
 		#move to predetermined position
-		theta =kinematics.IK([x_pred, y_pred, 50])
+		theta =kinematics.IK([x_pred, y_pred, 0])
 		#theta = kinematics.IK([166.57, -55.87])
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
+
 		self.rexarm.open_gripper()
+
+		#move up
+		#print([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x_pred, y_pred, 100])
+		#print(theta)
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+
+
 
   ###########################################
 
 		#moving above bluee block
 		x = self.kinect.blocks["blue"]["centroid"][0] 
 		y = self.kinect.blocks["blue"]["centroid"][1] 
-
 		
 		x,y,z = self.worldCoordinates(x,y)
 		print("Red coordinates",x,y, z)
@@ -228,70 +231,88 @@ class StateMachine():
 		self.rexarm.open_gripper()
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
+
 
 		theta =kinematics.IK([x*1000, y*1000, 0])
 		#theta = kinematics.IK([166.57, -55.87])
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
+
 		self.rexarm.close_gripper()
 
 		#move up
 		#print([x*1000, y*1000, z*1000 + 30])
-		theta =kinematics.IK([x*1000, y*1000, 50])
+		theta =kinematics.IK([x*1000, y*1000, 80])
 		#print(theta)
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
+
+		x = self.kinect.blocks["red"]["centroid"][0] 
+		y = self.kinect.blocks["red"]["centroid"][1] 
+		x,y,z = self.worldCoordinates(x,y)
+		x = x_pred
+		y = y_pred
+
 
 		#move to predetermined position
-		theta =kinematics.IK([x_pred, y_pred, 100])
+		theta =kinematics.IK([x-10, y, 43])
 		#theta = kinematics.IK([166.57, -55.87])
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
+
 		self.rexarm.open_gripper()
+
+		#move up
+		#print([x*1000, y*1000, z*1000 + 30])
+		theta =kinematics.IK([x, y, 80])
+		#print(theta)
+		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+		self.tp.execute_plan([q,v])
+
+
 
 		###########################################
 
 		#moving above green block
-		x = self.kinect.blocks["green"]["centroid"][0] 
-		y = self.kinect.blocks["green"]["centroid"][1] 
 
-		
+		x = self.kinect.blocks["yellow"]["centroid"][0] 
+		y = self.kinect.blocks["yellow"]["centroid"][1] 	
 		x,y,z = self.worldCoordinates(x,y)
 		print("Red coordinates",x,y, z)
 
 
-		theta =kinematics.IK([x*1000, y*1000, 50])
+		theta =kinematics.IK([x*1000, y*1000, 100])
 		#theta = kinematics.IK([166.57, -55.87])
 		self.rexarm.open_gripper()
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
 
 		theta =kinematics.IK([x*1000, y*1000, 0])
 		#theta = kinematics.IK([166.57, -55.87])
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
 		self.rexarm.close_gripper()
 
 		#move up
 		#print([x*1000, y*1000, z*1000 + 30])
-		theta =kinematics.IK([x*1000, y*1000, 50])
+		theta =kinematics.IK([x*1000, y*1000, 100])
 		#print(theta)
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
+
+		x = self.kinect.blocks["blue"]["centroid"][0] 
+		y = self.kinect.blocks["blue"]["centroid"][1] 
+		x,y,z = self.worldCoordinates(x,y)
+
+		x = x_pred
+		y = y_pred
 
 		#move to predetermined position
-		theta =kinematics.IK([x_pred, y_pred, 150])
+		theta =kinematics.IK([x+30, y, 90])
 		#theta = kinematics.IK([166.57, -55.87])
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
+
 		self.rexarm.open_gripper()
 
 		
@@ -302,11 +323,46 @@ class StateMachine():
 		# you start with a predefined location of where each block is going to end
 		#for every block in board, if block is not in correct position:
 		#move block to correct position
-		theta =kinematics.IK([92, -126, 0])
-		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
-		self.tp.execute_plan([q,v])
-		self.rexarm.pause(2)
-		
+		#colors = ["black", "red", "orange", "yellow", "green", "blue", "violet", "pink"]
+		#temp_locs = [(-150, -150), (-150, -110), (-150, -70), (-150, -30), (-150, 10), (-150,50), (-150, 90), (-150, 130)]
+		colors = ["yellow", "red", "green", "blue"]
+		temp_locs = [ (-150, -30), (-150, 130),(-150,50)]
+		height = [0, 30, 0]
+#		height=[90, 0, 0, 0, 55, 0, 0, 0]
+		for i, color in enumerate(colors):
+
+			x = self.kinect.blocks[color]["centroid"][0] 
+			y = self.kinect.blocks[color]["centroid"][1] 
+			x,y,z = self.worldCoordinates(x,y)
+			print(color, " ", x, " ", y, " ", z)
+			theta =kinematics.IK([x*1000, y*1000,  height[i] + 50])
+			self.rexarm.open_gripper()
+			[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+			self.tp.execute_plan([q,v])
+
+			theta =kinematics.IK([x*1000, y*1000,  height[i]])
+			[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+			self.tp.execute_plan([q,v])
+			self.rexarm.close_gripper()
+
+			#move up
+			theta =kinematics.IK([x*1000, y*1000, 100])
+			[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+			self.tp.execute_plan([q,v])
+
+
+			#move to predetermined position
+			theta =kinematics.IK([temp_locs[i][0],temp_locs[i][1], 0])
+			[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+			self.tp.execute_plan([q,v])
+			self.rexarm.open_gripper()
+
+			#move up
+			theta =kinematics.IK([temp_locs[i][0],temp_locs[i][1], 100])
+			[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
+			self.tp.execute_plan([q,v])
+
+			
 		self.set_next_state("idle")
 
 	def stackthemhigh(self):
@@ -339,7 +395,7 @@ class StateMachine():
 
 				# move up
 				# print([x*1000, y*1000, z*1000 + 30])
-				theta = kinematics.IK([x * 1000, y * 1000, 40 * i + 50)
+				theta = kinematics.IK([x * 1000, y * 1000, 40 * i + 50])
 					# print(theta)
 				[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 				self.tp.execute_plan([q, v])
@@ -374,7 +430,7 @@ class StateMachine():
 
 			# move up
 			# print([x*1000, y*1000, z*1000 + 30])
-			theta = kinematics.IK([x * 1000, y * 1000, 40*i+ 50)
+			theta = kinematics.IK([x * 1000, y * 1000, 40*i+ 50])
 			# print(theta)
 			[q, v] = self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 			self.tp.execute_plan([q, v])
@@ -517,44 +573,52 @@ class StateMachine():
 		self.kinect.colorbuckets()
 		self.set_next_state("idle")
 
+	# def calibrate(self):
+	# 	self.current_state = "calibrate"
+	# 	if self.prev_state == "manual":
+	# 		self.set_next_state("manual")
+	# 	else:
+	# 		self.set_next_state("idle")
+
+
+	# 	self.tp.go(max_speed=2.0)
+	# 	location_strings = ["lower left corner of board",
+	# 						"upper left corner of board",
+	# 						"upper right corner of board",
+	# 						"lower right corner of board",
+	# 						"center of shoulder motor"]
+	# 	i = 0
+	# 	for j in range(5):
+	# 		self.status_message = "Calibration - Click %s in RGB image" % location_strings[j]
+	# 		while (i <= j):
+	# 			self.rexarm.get_feedback()
+	# 			if(self.kinect.new_click == True):
+	# 				self.kinect.rgb_click_points[i] = self.kinect.last_click.copy()
+	# 				i = i + 1
+	# 				self.kinect.new_click = False        
+		
+	# 	i = 0
+	# 	for j in range(5):
+	# 		self.status_message = "Calibration - Click %s in depth image" % location_strings[j]
+	# 		while (i <= j):
+	# 			self.rexarm.get_feedback()
+	# 			if(self.kinect.new_click == True):
+	# 				self.kinect.depth_click_points[i] = self.kinect.last_click.copy()
+	# 				i = i + 1
+	# 				self.kinect.new_click = False
+
+	# 	"""TODO Perform camera calibration here"""
+	# 	affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
+
+	# 	self.kinect.affineworkspace(self.kinect.rgb_click_points)
+	# 	self.kinect.kinectCalibrated = True
+	# 	self.status_message = "Calibration - Completed Calibration"
+	# 	time.sleep(1)
+
 	def calibrate(self):
 		self.current_state = "calibrate"
 		if self.prev_state == "manual":
 			self.set_next_state("manual")
 		else:
 			self.set_next_state("idle")
-
-
-		self.tp.go(max_speed=2.0)
-		location_strings = ["lower left corner of board",
-							"upper left corner of board",
-							"upper right corner of board",
-							"lower right corner of board",
-							"center of shoulder motor"]
-		i = 0
-		for j in range(5):
-			self.status_message = "Calibration - Click %s in RGB image" % location_strings[j]
-			while (i <= j):
-				self.rexarm.get_feedback()
-				if(self.kinect.new_click == True):
-					self.kinect.rgb_click_points[i] = self.kinect.last_click.copy()
-					i = i + 1
-					self.kinect.new_click = False        
-		
-		i = 0
-		for j in range(5):
-			self.status_message = "Calibration - Click %s in depth image" % location_strings[j]
-			while (i <= j):
-				self.rexarm.get_feedback()
-				if(self.kinect.new_click == True):
-					self.kinect.depth_click_points[i] = self.kinect.last_click.copy()
-					i = i + 1
-					self.kinect.new_click = False
-
-		"""TODO Perform camera calibration here"""
-		affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
-
-		self.kinect.affineworkspace(self.kinect.rgb_click_points)
-		self.kinect.kinectCalibrated = True
-		self.status_message = "Calibration - Completed Calibration"
-		time.sleep(1)
+		self.kinect.houghlines()

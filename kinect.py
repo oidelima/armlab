@@ -178,15 +178,7 @@ class Kinect():
 		else:
 			return False
 
-	def auto_canny(self,image, sigma):
-		# compute the median of the single channel pixel intensities
-		v = np.median(image)
- 
-		# apply automatic Canny edge detection using the computed median
-		lower = int(max(0, (1.0 - sigma) * v))
-		upper = int(min(255, (1.0 + sigma) * v))
-		edged = cv2.Canny(image, lower, upper)
-		return edged
+
 
 	def masking(self, image):
 		#return cv2.bitwise_and(self.auto_canny(image,0.33), self.auto_canny(image,.33), mask = self.BlockMask)
@@ -320,8 +312,6 @@ class Kinect():
 			except:
 				return None
 			
-
-		#print(self.blocks)
 		contours = cv2.findContours(value_threshold, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 		self.block_contours = []
 		if len(contours) != 0:
@@ -501,8 +491,8 @@ class Kinect():
 		vector_x = np.matmul(matrix_A_inv,vector_b)
 	
 		affineMatrixTransformation = np.array([[vector_x[0], vector_x[1], vector_x[2]],
-						   					   [vector_x[3], vector_x[4], vector_x[5]],
-						   					   [	      0,	       0, 	       1]])
+											   [vector_x[3], vector_x[4], vector_x[5]],
+											   [	      0,	       0, 	       1]])
 		self.workcamera_affine = vector_x.reshape(2,3)
 		return self.workcamera_affine
 
@@ -515,14 +505,89 @@ class Kinect():
 										[-rot_vec[1], rot_vec[0], 0.0]])
 		self.translation_matrix = trans_vec
 		return trans_vec
-	
+
+
+	def auto_canny(self,image, sigma):
+		#image = cv2.GaussianBlur(image, (5,5),0)
+		v = np.median(image)
+		lower = int(max(100, (1.0 - sigma) * v))
+		upper = int(min(200, (1.0 + sigma) * v))
+		edges = cv2.Canny(image, lower, upper)
+		cv2.imwrite("edges.jpg",edges)
+		return edges
+
+
+	def rgbedges(self):
+		image = self.currentVideoFrame
+		#image = cv2.GaussianBlur(image, (5,5),0)
+		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+		ret,image  = cv2.threshold(image,200,255,cv2.THRESH_BINARY)
+		cv2.imwrite("gray_rgb.jpg",image)
+		image = cv2.Canny(image, 100, 250)
+		cv2.imwrite("gray_rgb_edge.jpg",image)
+		return image
+
+	def depthedges(self):
+		image = self.currentDepthFrame
+		image = cv2.GaussianBlur(image, (5,5),0)
+		image  = cv2.inRange(image, 717, 725)
+		image = image
+		cv2.imwrite("gray_depth.jpg",image)
+		image = cv2.Canny(image, 100, 250)
+		cv2.imwrite("gray_depth_edge.jpg",image)
+		return image
+
+	def houghlines(self):
+		rgb = self.currentVideoFrame
+		depth = self.currentDepthFrame
+		rgbedges = self.rgbedges()
+		depthedges = self.depthedges()
+		rgblines = cv2.HoughLines( rgbedges, 1, np.pi/180, 120)
+		depthlines = cv2.HoughLines( depthedges, 1, np.pi/180, 120)
+		print("rgb", rgblines)
+		print("depthlines", depthlines)
+		rgbcoordinates = []
+		for i in range(len(rgblines)):
+			theta = rgblines[i][0][1]
+			rho = rgblines[i][0][0]
+			a = np.cos(theta)
+			b = np.sin(theta)
+			x0 = a*rho
+			y0 = b*rho
+			x1 = int(x0 + 1000*(-b))
+			y1 = int(y0 + 1000*(a))
+			x2 = int(x0 - 1000*(-b))
+			y2 = int(y0 - 1000*(a))
+			print(x0,y0,x1,y1,x2,y2)
+			cv2.line(rgb,(x1,y1),(x2,y2),(0,0,255),2)
+
+
+		depthcoordinates = []
+		for i in range(len(depthlines)):
+			theta = depthlines[i][0][1]
+			rho = depthlines[i][0][0]
+			a = np.cos(theta)
+			b = np.sin(theta)
+			x0 = a*rho
+			y0 = b*rho
+			x1 = int(x0 + 1000*(-b))
+			y1 = int(y0 + 1000*(a))
+			x2 = int(x0 - 1000*(-b))
+			y2 = int(y0 - 1000*(a))
+			print(x0,y0,x1,y1,x2,y2)
+			cv2.line(depth,(x1,y1),(x2,y2),(0,0,255),2)
+
+
+		cv2.imwrite("g_rgb.jpg",rgb)
+		cv2.imwrite("g_depth.jpg",depth)
+
 """ def apriltagtransformation(self): 
 		detector = apriltag("tagStandard41h12", threads=4, decimate=2.0)
 		d = .060
 		object_points = np.array([[-d,-d,0.0],
-		 						  [d, -d, 0.0],
-		 						  [d, d, 0.0],
-		 						  [-d, d, 0.0]],dtype = "double")
+								  [d, -d, 0.0],
+								  [d, d, 0.0],
+								  [-d, d, 0.0]],dtype = "double")
 
 		image = self.currentVideoFrame
 		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)

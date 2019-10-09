@@ -50,6 +50,7 @@ class Rexarm():
             joint.set_position(0.0)
             joint.set_torque_limit(0.5)
             joint.set_speed(0.25)
+        
         if(self.gripper != 0):
             self.gripper.set_torque_limit(1.0)
             self.gripper.set_speed(0.8)

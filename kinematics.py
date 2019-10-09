@@ -12,12 +12,19 @@ There are some functions to start with, you may need to implement a few more
 """
 
 #link lengths in mm
-L1 = 42.8
-L2 = 99.29
-L3 = 67.2
-L4 = 42.3
-L5 = 48.42
-L6 = 35.88
+#L1 = 42.8
+#L2 = 99.29
+#L3 = 67.2
+#L4 = 42.3
+#L5 = 48.42
+#L6 = 35.88
+
+L1 = 44
+L2 = 101
+L3 = 73
+L4 = 40
+L5 = 51
+L6 = 35
 
 
 def FK_dh(joint_angles, link):
@@ -139,8 +146,8 @@ def IK(o ,R = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])):
 
 	""" TODO: Calculate inverse kinematics for rexarm return the required joint angles """
 
-	oc = np.round(np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]]),6)
-
+	oc = np.round(np.array([[o[0] - (L6+L5)*R[0][2]], [o[1] - (L6 + L5)*R[1][2]], [o[2] - (L6 + L5)*R[2][2]]]).astype(np.double),6)
+	print(oc)
 	theta1 = atan2(oc[1], oc[0])  #two possibilities
 
 
@@ -344,7 +351,7 @@ def ik_test():
 
 	#extra tests
 	#[-0.6397397664270065, 0.4260223494513975, 1.4493983633909848, -8.343964209548854e-17, 1.266171940747411, -0.6397397664270064]
-	o = np.array([200, -200, 0.072748008628356])
+	o = np.array([200, 200, 0.072748008628356])
 	print(IK(o))
 
 ik_test()
