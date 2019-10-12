@@ -542,18 +542,18 @@ class Kinect():
 	def houghlines(self):
 		print("finding lines")
 		depth = self.currentDepthFrame*0
-		rgbedges = self.rgbedges()
-		depthedges = self.depthedges()
 
 		rgblines = []
 		counter  =  20
 		while(len(rgblines) != 4):
+			rgbedges = self.rgbedges()
 			rgblines = cv2.HoughLines( rgbedges, 1, np.pi/180, 130)
 			print(len(rgblines))
 		print("lines found rgb")
 
 		depthlines = []
 		counter = 20
+		depthedges = self.depthedges()
 		while(len(depthlines) != 4 and counter != 0):
 			depthlines = cv2.HoughLines( depthedges, 1, np.pi/90, 100 - (20 - counter))
 			counter = counter - 1
