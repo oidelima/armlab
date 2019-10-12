@@ -580,7 +580,7 @@ class StateMachine():
 		else:
 			self.set_next_state("idle")
 
-
+		self.status_message = "Calibrating"
 		self.tp.go(max_speed=2.0)
 		location_strings = ["lower left corner of board",
 							"upper left corner of board",

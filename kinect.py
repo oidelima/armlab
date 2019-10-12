@@ -206,8 +206,6 @@ class Kinect():
 			return 0,0
 
 	def cornersBlock(self,contour):
-		#perimeter = cv2.arcLength(contour, True)
-		#approx = cv2.approxPolyDP(contour, 0.02 * perimeter, True)
 		rect = cv2.minAreaRect(contour)
 		corners = cv2.boxPoints(rect)
 		corners = np.int0(box)
@@ -497,12 +495,12 @@ class Kinect():
 
 	def rgbedges(self):
 		image = freenect.sync_get_video_with_res()[0]
-		image = cv2.GaussianBlur(image, (5,5),2)
+		image = cv2.medianBlur(image, 3)
 		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 		ret,image  = cv2.threshold(image,220,255,cv2.THRESH_BINARY)
-		#cv2.imwrite("gray_rgb.jpg",image)
+		cv2.imwrite("gray_rgb.jpg",image)
 		image = cv2.Canny(image, 200, 250)
-		#cv2.imwrite("gray_rgb_edge.jpg",image)
+		cv2.imwrite("gray_rgb_edge.jpg",image)
 		return image
 
 	def depthedges(self):
@@ -510,9 +508,9 @@ class Kinect():
 		image = cv2.GaussianBlur(image, (5,5),2)
 		image  = cv2.inRange(image, 717, 725)
 		image = image
-		#cv2.imwrite("gray_depth.jpg",image)
+		cv2.imwrite("gray_depth.jpg",image)
 		image = cv2.Canny(image, 100, 250)
-		#cv2.imwrite("gray_depth_edge.jpg",image)
+		cv2.imwrite("gray_depth_edge.jpg",image)
 		return image
 
 	def cornerscal(self, image):
@@ -524,83 +522,83 @@ class Kinect():
 			#print("could not find four corners try again")
 			return None
 
+	def drawinglines(self, line_parameters):
+		print("drawing lines")
+		depth = self.currentDepthFrame*0
+		for i in range(len(line_parameters)):
+			theta = line_parameters[i][0][1]
+			rho = line_parameters[i][0][0]
+			a = np.cos(theta)
+			b = np.sin(theta)
+			x0 = a*rho
+			y0 = b*rho
+			x1 = int(x0 + 1000*(-b))
+			y1 = int(y0 + 1000*(a))
+			x2 = int(x0 - 1000*(-b))
+			y2 = int(y0 - 1000*(a))
+			cv2.line(depth,(x1,y1),(x2,y2),(255,255,255),1)
+		return depth
 
 	def houghlines(self):
-		#print("finding lines")
+		print("finding lines")
 		depth = self.currentDepthFrame*0
 		rgbedges = self.rgbedges()
 		depthedges = self.depthedges()
 
 		rgblines = []
 		counter  =  20
-		while(len(rgblines) != 4 and counter != 0):
-			#print("Looking for color lines")
-			rgblines = cv2.HoughLines( rgbedges, 1, np.pi/100, 100)
+		while(len(rgblines) != 4):
+			rgblines = cv2.HoughLines( rgbedges, 1, np.pi/180, 130)
+			print(len(rgblines))
+		print("lines found rgb")
 
-		#print("lines found rgb")
 		depthlines = []
 		counter = 20
 		while(len(depthlines) != 4 and counter != 0):
-			#print("Looking for depth lines")
-			depthlines = cv2.HoughLines( depthedges, 1, np.pi/90, 90 - (20 - counter))
+			depthlines = cv2.HoughLines( depthedges, 1, np.pi/90, 100 - (20 - counter))
 			counter = counter - 1
+			print(len(depthlines))
 
-		#print("lines found depth")
+		print("lines found depth")
 
-
-		depthcoordinates = []
-		for i in range(len(depthlines)):
-			theta = depthlines[i][0][1]
-			rho = depthlines[i][0][0]
-			a = np.cos(theta)
-			b = np.sin(theta)
-			x0 = a*rho
-			y0 = b*rho
-			x1 = int(x0 + 1000*(-b))
-			y1 = int(y0 + 1000*(a))
-			x2 = int(x0 - 1000*(-b))
-			y2 = int(y0 - 1000*(a))
-			#print(x0,y0,x1,y1,x2,y2)
-			cv2.line(depth,(x1,y1),(x2,y2),(255,255,255),1)
-		#cv2.imwrite("g_depth.jpg",depth)
+		depth = self.drawinglines(depthlines)
+		cv2.imwrite("g_depth.jpg",depth)
 		self.corners_depth = self.cornerscal(depth)
-		#print("Depth corners",self.corners_depth)
+		print("Depth corners",self.corners_depth)
 		depth = depth*0
-
-		for i in range(len(rgblines)):
-			theta = rgblines[i][0][1]
-			rho = rgblines[i][0][0]
-			a = np.cos(theta)
-			b = np.sin(theta)
-			x0 = a*rho
-			y0 = b*rho
-			x1 = int(x0 + 1000*(-b))
-			y1 = int(y0 + 1000*(a))
-			x2 = int(x0 - 1000*(-b))
-			y2 = int(y0 - 1000*(a))
-			#print(x0,y0,x1,y1,x2,y2)
-			cv2.line(depth,(x1,y1),(x2,y2),(255,255,255),1)
-
-
-		#cv2.imwrite("g_rgb.jpg",depth)
+		depth = self.drawinglines(rgblines)
+		cv2.imwrite("g_rgb.jpg",depth)
 		self.corners_rgb = self.cornerscal(depth)
-		#print("RGB corners",self.corners_rgb)
+		print("RGB corners",self.corners_rgb)
 
-		depth_corner_lb = self.corners_depth[1]
-		depth_corner_lt = self.corners_depth[2]
-		depth_corner_rt = self.corners_depth[3]
-		depth_corner_rb = self.corners_depth[0]
+		for i in range(4):
+			print("sorting")
+			print(self.corners_depth[i][0][0])
+			if (self.corners_depth[i][0][0]>400 and self.corners_depth[i][0][1]<200):
+				depth_corner_lb = self.corners_depth[i]
+			elif (self.corners_depth[i][0][0]<200 and self.corners_depth[i][0][1]<200):
+				depth_corner_lt = self.corners_depth[i]
+			elif (self.corners_depth[i][0][0]<200 and self.corners_depth[i][0][1]>400):
+				depth_corner_rt = self.corners_depth[i]
+			else:
+				depth_corner_rb = self.corners_depth[i]
 
+		for i in range(4):
+			print("sorting")
+			if (self.corners_rgb[i][0][0]>400 and self.corners_rgb[i][0][1]<200):
+				rgb_corner_lb = self.corners_rgb[i]
+			elif (self.corners_rgb[i][0][0]<200 and self.corners_rgb[i][0][1]<200):
+				rgb_corner_lt = self.corners_rgb[i]
+			elif (self.corners_rgb[i][0][0]<200 and self.corners_rgb[i][0][1]>400):
+				rgb_corner_rt = self.corners_rgb[i]
+			else:
+				rgb_corner_rb = self.corners_rgb[i]
 
-		rgb_corner_lb = self.corners_rgb[2]
-		rgb_corner_lt = self.corners_rgb[3]
-		rgb_corner_rt = self.corners_rgb[1]
-		rgb_corner_rb = self.corners_rgb[0]
 
 		self.corners_depth = [depth_corner_lb, depth_corner_lt, depth_corner_rt, depth_corner_rb]
 		self.corners_rgb = [rgb_corner_lb, rgb_corner_lt, rgb_corner_rt, rgb_corner_rb]
 
-
+		print(self.corners_depth,self.corners_rgb)
 """ def apriltagtransformation(self):
 		detector = apriltag("tagStandard41h12", threads=4, decimate=2.0)
 		d = .060
