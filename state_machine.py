@@ -30,13 +30,13 @@ class StateMachine():
 	""" This function is run continuously in a thread"""
 
 	def run(self):
-		
+
 		if(self.current_state == "manual"):
 			self.prev_state = "manual"
 			if (self.next_state == "manual"):
 				self.manual()
 			if(self.next_state == "idle"):
-				self.idle()                
+				self.idle()
 			if(self.next_state == "estop"):
 				self.estop()
 			if(self.next_state == "execute"):
@@ -87,18 +87,18 @@ class StateMachine():
 				self.blockslider()
 			if(self.next_state == "hot swap"):
 				self.hotswap()
-		
+
 		if(self.current_state == "record"):
 			self.prev_state = "record"
 			if(self.next_state == "manual"):
 				self.manual()
 			if(self.next_state == "record"):
 				self.record()
-				
+
 		if(self.current_state == "estop"):
 			self.prev_state = "estop"
 			self.next_state = "estop"
-			self.estop()  
+			self.estop()
 
 		if(self.current_state == "calibrate"):
 			self.prev_state = "calibrate"
@@ -112,7 +112,7 @@ class StateMachine():
 			if(self.next_state == "idle"):
 				self.idle()
 			if(self.next_state == "manual"):
-				self.manual()		
+				self.manual()
 
 		if(self.current_state == "click grab drop"):
 			self.prev_state = "click grab drop"
@@ -120,7 +120,7 @@ class StateMachine():
 				self.idle()
 			if(self.next_state == "estop"):
 				self.estop()
-		
+
 		if(self.current_state == "pick and stack"):
 			self.prev_state = "pick and stack"
 			if(self.next_state == "idle"):
@@ -162,8 +162,8 @@ class StateMachine():
 		z = self.kinect.currentDepthFrame[int(y)][int(x)]
 		camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
 		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates)
-		z = .1236*np.tan(z/2842.5 + 1.1863) 
-		x = xy_world[0] 
+		z = .1236*np.tan(z/2842.5 + 1.1863)
+		x = xy_world[0]
 		y = -xy_world[1]
 		z = .94 - z
 		return x,y,z
@@ -174,8 +174,8 @@ class StateMachine():
 		y_pred = -20.0
 
 		#moving above red block
-		x = self.kinect.blocks["red"]["centroid"][0] 
-		y = self.kinect.blocks["red"]["centroid"][1] 
+		x = self.kinect.blocks["red"]["centroid"][0]
+		y = self.kinect.blocks["red"]["centroid"][1]
 		x,y,z = self.worldCoordinates(x,y)
 		print("Red coordinates",x,y,z)
 
@@ -219,9 +219,9 @@ class StateMachine():
   ###########################################
 
 		#moving above bluee block
-		x = self.kinect.blocks["blue"]["centroid"][0] 
-		y = self.kinect.blocks["blue"]["centroid"][1] 
-		
+		x = self.kinect.blocks["blue"]["centroid"][0]
+		y = self.kinect.blocks["blue"]["centroid"][1]
+
 		x,y,z = self.worldCoordinates(x,y)
 		print("Red coordinates",x,y, z)
 
@@ -247,8 +247,8 @@ class StateMachine():
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
 
-		x = self.kinect.blocks["red"]["centroid"][0] 
-		y = self.kinect.blocks["red"]["centroid"][1] 
+		x = self.kinect.blocks["red"]["centroid"][0]
+		y = self.kinect.blocks["red"]["centroid"][1]
 		x,y,z = self.worldCoordinates(x,y)
 		x = x_pred
 		y = y_pred
@@ -275,8 +275,8 @@ class StateMachine():
 
 		#moving above green block
 
-		x = self.kinect.blocks["yellow"]["centroid"][0] 
-		y = self.kinect.blocks["yellow"]["centroid"][1] 	
+		x = self.kinect.blocks["yellow"]["centroid"][0]
+		y = self.kinect.blocks["yellow"]["centroid"][1]
 		x,y,z = self.worldCoordinates(x,y)
 		print("Red coordinates",x,y, z)
 
@@ -300,8 +300,8 @@ class StateMachine():
 		[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 		self.tp.execute_plan([q,v])
 
-		x = self.kinect.blocks["blue"]["centroid"][0] 
-		y = self.kinect.blocks["blue"]["centroid"][1] 
+		x = self.kinect.blocks["blue"]["centroid"][0]
+		y = self.kinect.blocks["blue"]["centroid"][1]
 		x,y,z = self.worldCoordinates(x,y)
 
 		x = x_pred
@@ -315,9 +315,9 @@ class StateMachine():
 
 		self.rexarm.open_gripper()
 
-		
+
 		self.set_next_state("idle")
-		
+
 	def linethemup(self):
 		print("line em up")
 		# you start with a predefined location of where each block is going to end
@@ -331,8 +331,8 @@ class StateMachine():
 #		height=[90, 0, 0, 0, 55, 0, 0, 0]
 		for i, color in enumerate(colors):
 
-			x = self.kinect.blocks[color]["centroid"][0] 
-			y = self.kinect.blocks[color]["centroid"][1] 
+			x = self.kinect.blocks[color]["centroid"][0]
+			y = self.kinect.blocks[color]["centroid"][1]
 			x,y,z = self.worldCoordinates(x,y)
 			print(color, " ", x, " ", y, " ", z)
 			theta =kinematics.IK([x*1000, y*1000,  height[i] + 50])
@@ -362,7 +362,7 @@ class StateMachine():
 			[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), theta, 3)
 			self.tp.execute_plan([q,v])
 
-			
+
 		self.set_next_state("idle")
 
 	def stackthemhigh(self):
@@ -444,7 +444,7 @@ class StateMachine():
 			self.rexarm.pause(2)
 			self.rexarm.open_gripper()
 
-				
+
 
 		print("stack em high")
 
@@ -475,7 +475,7 @@ class StateMachine():
 		z = self.kinect.currentDepthFrame[y][x]
 		print(y,x,z)
 		camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
-		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
+		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates)
 		z_w = 0.94 - .1236*np.tan(z/2842.5 + 1.1863)
 
 		#move to block 1
@@ -504,7 +504,7 @@ class StateMachine():
 		z = self.kinect.currentDepthFrame[y][x]
 		#print(y,x,z)
 		camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
-		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
+		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates)
 		z_w = 0.94 - .1236*np.tan(z/2842.5 + 1.1863)
 		theta =kinematics.IK([xy_world[0][0]*1000, -xy_world[1][0]*1000, z_w*1000 + 30])
 		#theta = kinematics.IK([166.57, -55.87])
@@ -521,7 +521,7 @@ class StateMachine():
 			self.set_next_state("manual")
 		else:
 			self.set_next_state("idle")
-		
+
 
 
 	def manual(self):
@@ -555,11 +555,11 @@ class StateMachine():
 			self.set_next_state("manual")
 		else:
 			self.set_next_state("idle")
-		
+
 
 	def record(self):
 		self.current_state = "record"
-		self.waypoints.append(self.rexarm.get_positions()[:]) 
+		self.waypoints.append(self.rexarm.get_positions()[:])
 		self.status_message = "Recording waypoint: " + str(self.rexarm.get_positions())
 		self.set_next_state("manual")
 
@@ -573,52 +573,53 @@ class StateMachine():
 		self.kinect.colorbuckets()
 		self.set_next_state("idle")
 
-	# def calibrate(self):
-	# 	self.current_state = "calibrate"
-	# 	if self.prev_state == "manual":
-	# 		self.set_next_state("manual")
-	# 	else:
-	# 		self.set_next_state("idle")
-
-
-	# 	self.tp.go(max_speed=2.0)
-	# 	location_strings = ["lower left corner of board",
-	# 						"upper left corner of board",
-	# 						"upper right corner of board",
-	# 						"lower right corner of board",
-	# 						"center of shoulder motor"]
-	# 	i = 0
-	# 	for j in range(5):
-	# 		self.status_message = "Calibration - Click %s in RGB image" % location_strings[j]
-	# 		while (i <= j):
-	# 			self.rexarm.get_feedback()
-	# 			if(self.kinect.new_click == True):
-	# 				self.kinect.rgb_click_points[i] = self.kinect.last_click.copy()
-	# 				i = i + 1
-	# 				self.kinect.new_click = False        
-		
-	# 	i = 0
-	# 	for j in range(5):
-	# 		self.status_message = "Calibration - Click %s in depth image" % location_strings[j]
-	# 		while (i <= j):
-	# 			self.rexarm.get_feedback()
-	# 			if(self.kinect.new_click == True):
-	# 				self.kinect.depth_click_points[i] = self.kinect.last_click.copy()
-	# 				i = i + 1
-	# 				self.kinect.new_click = False
-
-	# 	"""TODO Perform camera calibration here"""
-	# 	affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
-
-	# 	self.kinect.affineworkspace(self.kinect.rgb_click_points)
-	# 	self.kinect.kinectCalibrated = True
-	# 	self.status_message = "Calibration - Completed Calibration"
-	# 	time.sleep(1)
-
 	def calibrate(self):
 		self.current_state = "calibrate"
 		if self.prev_state == "manual":
 			self.set_next_state("manual")
 		else:
 			self.set_next_state("idle")
-		self.kinect.houghlines()
+
+
+		self.tp.go(max_speed=2.0)
+		location_strings = ["lower left corner of board",
+							"upper left corner of board",
+							"upper right corner of board",
+							"lower right corner of board",
+							"center of shoulder motor"]
+
+
+
+		try:
+			self.kinect.houghlines()
+			for i in range(4):
+				self.kinect.depth_click_points[i] = self.kinect.corners_depth[i]
+				self.kinect.rgb_click_points[i] = self.kinect.corners_rgb[i]
+
+		except:
+			i = 0
+			for j in range(5):
+				self.status_message = "Calibration - Click %s in RGB image" % location_strings[j]
+				while (i <= j):
+					self.rexarm.get_feedback()
+					if(self.kinect.new_click == True):
+						self.kinect.rgb_click_points[i] = self.kinect.last_click.copy()
+						i = i + 1
+						self.kinect.new_click = False
+
+			i = 0
+			for j in range(5):
+				self.status_message = "Calibration - Click %s in depth image" % location_strings[j]
+				while (i <= j):
+					self.rexarm.get_feedback()
+					if(self.kinect.new_click == True):
+						self.kinect.depth_click_points[i] = self.kinect.last_click.copy()
+						i = i + 1
+						self.kinect.new_click = False
+		"""TODO Perform camera calibration here"""
+		affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
+
+		self.kinect.affineworkspace(self.kinect.rgb_click_points)
+		self.kinect.kinectCalibrated = True
+		self.status_message = "Calibration - Completed Calibration"
+		time.sleep(1)
