@@ -176,8 +176,7 @@ class StateMachine():
 		pixel_coordinates = np.array([[x*1.75],[y*1.764],[1]]).astype(np.float32)
 
 		camera_coordinates = np.matmul(self.kinect.intrinsic_matrix_inverse,pixel_coordinates)
-		camera_coordinates = np.append(camera_coordinates,[[1]],axis=0)
-		print(camera_coordinates)
+		camera_coordinates = np.append(camera_coordinates,[[1]], axis=0)
 
 		xy_world = np.matmul(self.kinect.work_camera_extrinsic_inv, camera_coordinates)
 		x = xy_world[0] - 0.208

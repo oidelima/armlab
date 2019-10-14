@@ -126,7 +126,8 @@ class Kinect():
 
 	def convertHSVFrame(self):
 		try:
-			image = cv2.cvtColor(self.currentVideoFrame, cv2.COLOR_RGB2HSV)
+			image = self.currentVideoFrame
+			image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
 			self.DepthH[...,0] = self.masking(image[...,0])
 			self.DepthH[...,1] = self.masking(image[...,0])
 			self.DepthH[...,2] = self.masking(image[...,0])
@@ -176,7 +177,7 @@ class Kinect():
 		except:
 			return None
 
-	def depthframeSampler(self, dt):
+	#def depthframeSampler(self, dt):
 		self.currentTime = time.clock()
 		if abs(self.currentTime - self.previousTime) > dt:
 			self.previousTime = self.currentTime
@@ -210,6 +211,8 @@ class Kinect():
 		# 		cy_w = xy_world[1]
 		# 		cz_w = .94 - z_w
 		# 		self.block_coordinates.append([cx_w,cy_w,cz_w])
+
+### Block Pose and Color determination functions ###
 
 	def centroidBlock(self, contour):
 			m = cv2.moments(contour)
@@ -286,6 +289,8 @@ class Kinect():
 	def detectBlocksInDepthImage(self):
 		image = self.currentVideoFrame.astype(np.float32)
 		image = cv2.GaussianBlur(image,(3,3),0)
+		cv2.imwrite("mask.jpg",self.BlockMask*255)
+		cv2.imwrite("RGBFrame.jpg",self.currentVideoFrame)
 		#cv2.imwrite("redimage.jpg",cv2.bitwise_and(self.currentVideoFrame[...,0],self.currentVideoFrame[...,0], mask = self.BlockMask))
 		#cv2.imwrite("greenimage.jpg",cv2.bitwise_and(self.currentVideoFrame[...,1],self.currentVideoFrame[...,1], mask = self.BlockMask))
 		#cv2.imwrite("blueimage.jpg",cv2.bitwise_and(self.currentVideoFrame[...,2],self.currentVideoFrame[...,2], mask = self.BlockMask))
@@ -310,6 +315,9 @@ class Kinect():
 			except:
 				return None
 
+		for x in self.blocks:
+			print('\n\n')
+			print(self.blocks[x])
 		contours = cv2.findContours(value_threshold, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 		self.block_contours = []
 		if len(contours) != 0:
@@ -357,13 +365,19 @@ class Kinect():
 		self.block_contours = contours
 
 	def colorbuckets(self):
+		cv2.imwrite("redframe.jpg",self.currentVideoFrame[...,0])
+		cv2.imwrite("greenframe.jpg",self.currentVideoFrame[...,1])
+		cv2.imwrite("blueframe.jpg",self.currentVideoFrame[...,2])
 
 		image = self.currentVideoFrame
 		image = cv2.GaussianBlur(image,(3,3),0)
-		image = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
-		value = image[...,2]
-		hue = image[...,0]
-		saturation = image[...,1]
+
+
+
+		image_hsv = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
+		value = image_hsv[...,2]
+		hue = image_hsv[...,0]
+		saturation = image_hsv[...,1]
 		hue_green = cv2.inRange(hue, 50, 70)
 		hue_blue = cv2.inRange(hue, 110, 130)
 		hue_yellow = cv2.inRange(hue, 20, 40)
@@ -372,7 +386,13 @@ class Kinect():
 		hue_pink = cv2.inRange(hue, 160, 170)
 		hue_purple = cv2.inRange(hue, 130,145)
 		value_black = cv2.inRange(value, 0 , 110)
-		value_pink = cv2.inRange(hue, 200, 255)
+		value_pink = cv2.inRange(value, 200, 255)
+		value_red = cv2.inRange(value,0, 200)
+		hue_orange_yellow = cv2.inRange(hue, 0,40)
+		saturation_yellow = cv2.inRange(saturation, 0, 40)
+		saturation_orange = cv2.inRange(saturation, 40, 255)
+		hue_red_pink = cv2.inRange(hue, 155, 179)
+
 
 		self.roi = cv2.bitwise_and(hue, hue, mask = self.BlockMask)
 		red = cv2.bitwise_and(hue_red, hue_red, mask = self.BlockMask)
@@ -384,6 +404,14 @@ class Kinect():
 		purple = cv2.bitwise_and(hue_purple, hue_purple, mask = self.BlockMask)
 		orange = cv2.bitwise_and(hue_orange, hue_orange, mask = self.BlockMask)
 		black = cv2.bitwise_and(value_black,value_black, mask = self.BlockMask)
+		orange_yellow = cv2.bitwise_and(hue_orange_yellow, hue_orange_yellow, mask = self.BlockMask)
+		red_pink = cv2.bitwise_and(hue_red_pink, hue_red_pink, mask = self.BlockMask)
+
+		orange = cv2.bitwise_and(orange_yellow, saturation_orange, mask = self.BlockMask)
+		yellow = cv2.bitwise_and(orange_yellow, saturation_yellow, mask = self.BlockMask)
+		red = cv2.bitwise_and(red_pink, value_red, mask = self.BlockMask)
+		pink = cv2.bitwise_and(red_pink, value_pink, mask = self.BlockMask)
+
 
 		cv2.imwrite("red.jpg", red)
 		cv2.imwrite("orange.jpg", orange)
@@ -396,6 +424,7 @@ class Kinect():
 
 		return green, blue, yellow, red, orange, purple, pink, black
 
+### Depth RGB Calibration Transformation ###
 	def getAffineTransform(self, coord1, coord2):
 		"""
 		Given 2 sets of corresponding coordinates,
@@ -456,6 +485,7 @@ class Kinect():
 					transformedDepthFrame[y_t][x_t] = frame[y][x]
 		return transformedDepthFrame
 
+### Workspace Pixel Calibration Functions ###
 	def loadCameraCalibration(self):
 		self.intrinsic_matrix = np.array([[990.75, 0.0, 331.10],[0.0, 988.20, 230.94],[0.0, 0.0, 1.0]])
 		return self.intrinsic_matrix
@@ -478,6 +508,29 @@ class Kinect():
 		self.intrinsic_matrix_inverse = self.intrinsic_matrix_inverse.astype(np.float32)
 		return self.intrinsic_matrix_inverse
 
+### Extrinsic Intrinsic Matrix Solution ###
+	def workspaceTransform(self, image_points):
+		camera_intrinsic_matrix = self.loadCameraCalibration()
+		dist_coeffs = np.array([[0.997871942, -8.92181313,  -.00374535215,  .0174515494, 35.0210420]]).astype(np.float32)
+		self.intrinsic_matrix_inverse_f()
+
+		length = 0.610
+		d = self.currentDepthFrame[image_points[0][1]][image_points[0][0]]
+
+		self.Z_c =  0.1236*tan(d/2842.5 + 1.1863)
+		image_points = image_points[:4]
+		object_points = np.array([[0.0, 0.0, 0.0],[0.0, length, 0.0],[length, length, 0.0],[length, 0.0, 0.0]]).astype(np.float32)
+
+		###Finding extrinsic matrix and its inverse
+		(success, rot_vec, trans_vec) = cv2.solvePnP(object_points, image_points.astype(np.float32), camera_intrinsic_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
+		rot_mat = cv2.Rodrigues(rot_vec)
+		rotation_matrix_w2c  = np.append(rot_mat[0],[[0,0,0]],axis = 0)
+		extrinsic_matrix = np.concatenate((rotation_matrix_w2c, np.append(trans_vec,[[1]], axis = 0)), axis = 1)
+		extrinsic_matrix_inv = np.linalg.inv(extrinsic_matrix)
+		self.work_camera_extrinsic_inv = extrinsic_matrix_inv
+		return self.work_camera_extrinsic_inv
+
+### Affine Solution ###
 	def affineworkspace(self, coordinates):
 		d = 0.305
 		pts2 = np.array([[-d, d],[-d, -d],[d, -d],[d, d],[0.0, 0.0]]).astype(np.float32)
@@ -520,27 +573,7 @@ class Kinect():
 		self.workcamera_affine = vector_x.reshape(2,3)
 		return self.workcamera_affine
 
-	def workspaceTransform(self, image_points):
-		camera_intrinsic_matrix = self.loadCameraCalibration()
-		dist_coeffs = np.array([[0.997871942, -8.92181313,  -.00374535215,  .0174515494, 35.0210420]]).astype(np.float32)
-		self.intrinsic_matrix_inverse_f()
-
-		length = 0.610
-		d = self.currentDepthFrame[image_points[0][1]][image_points[0][0]]
-
-		self.Z_c =  0.1236*tan(d/2842.5 + 1.1863)
-		image_points = image_points[:4]
-		object_points = np.array([[0.0, 0.0, 0.0],[0.0, length, 0.0],[length, length, 0.0],[length, 0.0, 0.0]]).astype(np.float32)
-
-		###Finding extrinsic matrix and its inverse
-		(success, rot_vec, trans_vec) = cv2.solvePnP(object_points, image_points.astype(np.float32), camera_intrinsic_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
-		rot_mat = cv2.Rodrigues(rot_vec)
-		rotation_matrix_w2c  = np.append(rot_mat[0],[[0,0,0]],axis = 0)
-		extrinsic_matrix = np.concatenate((rotation_matrix_w2c, np.append(trans_vec,[[1]], axis = 0)), axis = 1)
-		extrinsic_matrix_inv = np.linalg.inv(extrinsic_matrix)
-		self.work_camera_extrinsic_inv = extrinsic_matrix_inv
-		return self.work_camera_extrinsic_inv
-
+### Automated Calibration Functions ###
 	def auto_canny(self,image, sigma):
 		#image = cv2.GaussianBlur(image, (5,5),0)
 		v = np.median(image)
@@ -644,3 +677,4 @@ class Kinect():
 
 		self.corners_depth = [depth_corner_lb, depth_corner_lt, depth_corner_rt, depth_corner_rb]
 		self.corners_rgb = [rgb_corner_lb, rgb_corner_lt, rgb_corner_rt, rgb_corner_rb]
+
