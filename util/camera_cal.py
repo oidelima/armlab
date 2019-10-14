@@ -5,7 +5,7 @@ OVERVIEW
 
   This is a simple example for using python OpenCV bindings to calibrate
   a point grey camera using a checkerboard.
-  
+
   The code must be modified to match your camera and checkerboard specifics
 
 USAGE
@@ -16,8 +16,8 @@ USAGE
 
   Calibration will be saved to calibration.cfg and Video will now display corrected immage.
 
-  Press ESC again to exit. 
-  
+  Press ESC again to exit.
+
   Peter Gaskell, U Michigan 2015
 """
 
@@ -35,8 +35,8 @@ square_size = 25.4
 # pattern of corners on checker board
 pattern_size = (8, 6)
 
-# builds array of reference corner locations 
-pattern_points = np.zeros((pattern_size[0]*pattern_size[1],3), np.float32) 
+# builds array of reference corner locations
+pattern_points = np.zeros((pattern_size[0]*pattern_size[1],3), np.float32)
 pattern_points[:,:2] = np.mgrid[0:pattern_size[0],0:pattern_size[1]].T.reshape(-1,2)
 pattern_points *= square_size
 
@@ -56,15 +56,17 @@ if __name__ == '__main__':
 
     # create main window
     cv2.namedWindow("camera",1)
-    
+
     frame_count = 0
     while True:
         ch = 0xFF & cv2.waitKey(10)
         if True:
             # convert Bayer GB to RGB for display
             rgb_frame = cv2.cvtColor(freenect.sync_get_video()[0],cv2.COLOR_RGB2BGR)
+
             # convert Bayer BG to Grayscale for corner detections
             grey_frame = cv2.cvtColor(rgb_frame,cv2.COLOR_BGR2GRAY)
+            cv2.imwrite("example.jpg",rgb_frame)
             frames_str = "Frames for Calibration:" + str(frame_count)
             cv2.putText(rgb_frame, frames_str, (50,50), font, 1, (255,255,255),2, cv2.LINE_AA)
             if ch == 32:
@@ -74,7 +76,7 @@ if __name__ == '__main__':
                     # find sub pixel estimate for corner location
                     cv2.cornerSubPix(grey_frame, corners, (5, 5), (-1, -1), criteria)
                     # add detected corners to RGB image
-                    frame_count += 1    
+                    frame_count += 1
                     img_points.append(corners.reshape(-1, 2))
                     obj_points.append(pattern_points)
                     cv2.drawChessboardCorners(rgb_frame, pattern_size, corners, found)
@@ -97,8 +99,8 @@ if __name__ == '__main__':
     f.write("\r\ndistortion coefficients:\r\n")
     f.write(str( dist_coefs.ravel()))
     f.close()
-    
-    
+
+
     # Use new calibration to undistort camera feed, exit on ESC
     new_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(camera_matrix,dist_coefs,(w,h),1,(w,h))
     while True:

@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import kinematics
+import cv2
 #import camera_cal
 
 
@@ -22,6 +23,7 @@ class StateMachine():
 		self.drop_position = ()
 		self.click_grab = False
 		self.click_dorp = False
+		self.calibrateaccuracypt = ()
 
 
 	def set_next_state(self, state):
@@ -87,6 +89,8 @@ class StateMachine():
 				self.blockslider()
 			if(self.next_state == "hot swap"):
 				self.hotswap()
+			if(self.next_state == "Calibration Accuracy"):
+				self.calibrationaccuracy()
 
 		if(self.current_state == "record"):
 			self.prev_state = "record"
@@ -156,17 +160,54 @@ class StateMachine():
 			if(self.next_state == "estop"):
 				self.estop()
 
+		if(self.current_state == "Calibration Accuracy"):
+			self.prev_state = "Calibration Accuracy"
+			if(self.next_state == "idle"):
+				self.idle()
+			if(self.next_state == "estop"):
+				self.estop()
+
 
 	"""Functions run for each state"""
 	def worldCoordinates(self,x,y):
 		z = self.kinect.currentDepthFrame[int(y)][int(x)]
-		camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
-		xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates)
 		z = .1236*np.tan(z/2842.5 + 1.1863)
-		x = xy_world[0]
-		y = -xy_world[1]
+
+		pixel_coordinates = np.array([[x*1.75],[y*1.764],[1]]).astype(np.float32)
+
+		camera_coordinates = np.matmul(self.kinect.intrinsic_matrix_inverse,pixel_coordinates)
+		camera_coordinates = np.append(camera_coordinates,[[1]],axis=0)
+		print(camera_coordinates)
+
+		xy_world = np.matmul(self.kinect.work_camera_extrinsic_inv, camera_coordinates)
+		x = xy_world[0] - 0.208
+		y = xy_world[1] + 0.165
 		z = .94 - z
 		return x,y,z
+
+
+	def calibrationaccuracy(self):
+		self.status_message = "Click a known point for accuracy check"
+		self.current_state = "Calibration Accuracy"
+		#while(not self.calibrateaccuracypt):
+		#	pass
+		#xy = self.worldCoordinates(self.calibrateaccuracypt[1],self.calibrateaccuracypt[0])
+		#print("world coordinates", xy )
+		depth_image = self.kinect.currentDepthFrame
+		rgb_image = self.kinect.currentVideoFrame
+		image = depth_image*0
+		for i in range(480):
+			for j in range(640):
+				if depth_image[i][j]> 720:
+					depth_image[i][j] = 0
+
+		depth_image = depth_image.astype(np.float32)
+		depth_image = depth_image/2048.0*255
+		for i in range(480):
+			for j in range(640):
+				image[i][j] = depth_image[i][j]
+		cv2.imwrite("depthmap.jpg", image)
+		self.set_next_state("idle")
 
 	def pickandstack(self):
 		#predetermined stacking position
@@ -522,8 +563,6 @@ class StateMachine():
 		else:
 			self.set_next_state("idle")
 
-
-
 	def manual(self):
 		self.status_message = "State: Manual - Use sliders to control arm"
 		self.current_state = "manual"
@@ -542,20 +581,7 @@ class StateMachine():
 		self.rexarm.get_feedback()
 
 	def execute(self):
-		self.status_message = "Executing ..."
-		self.current_state = "execute"
-
-		self.rexarm.set_positions([0, 0, 0, 0, 0, 3])
-		#self.rexarm.set_positions(ja[12])
-			# for i in range(len(self.waypoints)):
-			# 	[q, v]= self.tp.generate_cubic_spline(self.rexarm.get_positions(), self.waypoints[i], 4)
-			# 	self.tp.execute_plan([q,v])
-			# 	self.rexarm.pause(2)
-		if self.prev_state == "manual":
-			self.set_next_state("manual")
-		else:
-			self.set_next_state("idle")
-
+		self.set_next_state("idle")
 
 	def record(self):
 		self.current_state = "record"
@@ -591,6 +617,8 @@ class StateMachine():
 
 
 		try:
+			self.status_message = "Attempting Automated calibration"
+			print(self.status_message)
 			self.kinect.houghlines()
 			for i in range(4):
 				self.kinect.depth_click_points[i] = self.kinect.corners_depth[i]
@@ -619,7 +647,12 @@ class StateMachine():
 		"""TODO Perform camera calibration here"""
 		affine_transform = self.kinect.getAffineTransform(self.kinect.rgb_click_points,self.kinect.depth_click_points)
 
-		self.kinect.affineworkspace(self.kinect.rgb_click_points)
+		#print(self.kinect.rgb_click_points)
+		#print(self.kinect.depth_click_points)
+
+		#self.kinect.affineworkspace(self.kinect.rgb_click_points)
+		print("affine",self.kinect.workcamera_affine)
+		print("solve PNP",self.kinect.workspaceTransform(self.kinect.rgb_click_points))
 		self.kinect.kinectCalibrated = True
 		self.status_message = "Calibration - Completed Calibration"
 		time.sleep(1)

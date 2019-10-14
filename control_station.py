@@ -43,7 +43,7 @@ class VideoThread(QThread):
 	updateFrame = pyqtSignal(QImage, QImage, QImage, QImage, QImage, QImage)
 
 	def __init__(self, kinect, parent=None):
-		QThread.__init__(self, parent=parent) 
+		QThread.__init__(self, parent=parent)
 		self.kinect = kinect
 
 	def run(self):
@@ -56,13 +56,13 @@ class VideoThread(QThread):
 			hsv_frame = self.kinect.convertHSVFrame()
 			self.updateFrame.emit(rgb_frame, depth_frame, block_depth_frame, hsv_frame[0], hsv_frame[1], hsv_frame[2])
 
-class LogicThread(QThread):   
+class LogicThread(QThread):
 	def __init__(self, state_machine, parent=None):
-		QThread.__init__(self, parent=parent) 
+		QThread.__init__(self, parent=parent)
 		self.sm=state_machine
 
 	def run(self):
-		while True:    
+		while True:
 			self.sm.run()
 			time.sleep(0.05)
 
@@ -72,7 +72,7 @@ class DisplayThread(QThread):
 	updateEndEffectorReadout = pyqtSignal(list)
 
 	def __init__(self, rexarm, state_machine, parent=None):
-		QThread.__init__(self, parent=parent) 
+		QThread.__init__(self, parent=parent)
 		self.rexarm = rexarm
 		self.sm=state_machine
 
@@ -80,14 +80,14 @@ class DisplayThread(QThread):
 		while True:
 			self.updateStatusMessage.emit(self.sm.status_message)
 			self.updateJointReadout.emit(self.rexarm.joint_angles_fb)
-			self.updateEndEffectorReadout.emit(self.rexarm.get_wrist_pose())    
+			self.updateEndEffectorReadout.emit(self.rexarm.get_wrist_pose())
 			time.sleep(0.1)
-	
+
 """GUI Class"""
 class Gui(QMainWindow):
-	""" 
+	"""
 	Main GUI Class
-	contains the main function and interfaces between 
+	contains the main function and interfaces between
 	the GUI and functions
 	"""
 	def __init__(self,parent=None):
@@ -118,16 +118,16 @@ class Gui(QMainWindow):
 		self.rexarm = Rexarm((base,shld,elbw,wrst,wrst2),0)
 		self.tp = TrajectoryPlanner(self.rexarm)
 		self.sm = StateMachine(self.rexarm, self.tp, self.kinect)
-	
-		""" 
+
+		"""
 		Attach Functions to Buttons & Sliders
 		TODO: NAME AND CONNECT BUTTONS AS NEEDED
 		"""
 		self.ui.btn_estop.clicked.connect(self.estop)
 		self.ui.btn_exec.clicked.connect(self.execute)
-		self.ui.btn_task1.clicked.connect(self.record) 
-		self.ui.btn_task2.clicked.connect(self.clear_waypoints) 
-		self.ui.btn_task3.clicked.connect(self.toggle_gripper) 
+		self.ui.btn_task1.clicked.connect(self.record)
+		self.ui.btn_task2.clicked.connect(self.clear_waypoints)
+		self.ui.btn_task3.clicked.connect(self.toggle_gripper)
 		self.ui.btnUser1.setText("Calibrate")
 		self.ui.btnUser1.clicked.connect(partial(self.sm.set_next_state, "calibrate"))
 		self.ui.btnUser2.setText("Block Detector")
@@ -146,6 +146,9 @@ class Gui(QMainWindow):
 		self.ui.btnUser7.clicked.connect(partial(self.sm.set_next_state, "block slider"))
 		self.ui.btnUser8.setText("Hot swap")
 		self.ui.btnUser8.clicked.connect(partial(self.sm.set_next_state, "hot swap"))
+		self.ui.btnUser9.setText("Calibration Accuracy")
+		self.ui.btnUser9.clicked.connect(partial(self.sm.set_next_state, "Calibration Accuracy"))
+
 		self.ui.sldrBase.valueChanged.connect(self.sliderChange)
 		self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
 		self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
@@ -168,13 +171,13 @@ class Gui(QMainWindow):
 
 		"""Setup Threads"""
 		self.videoThread = VideoThread(self.kinect)
-		self.videoThread.updateFrame.connect(self.setImage)        
+		self.videoThread.updateFrame.connect(self.setImage)
 		self.videoThread.start()
 
-		
+
 		self.logicThread = LogicThread(self.sm)
 		self.logicThread.start()
-		
+
 
 		self.displayThread = DisplayThread(self.rexarm, self.sm)
 		self.displayThread.updateJointReadout.connect(self.updateJointReadout)
@@ -182,8 +185,8 @@ class Gui(QMainWindow):
 		self.displayThread.updateStatusMessage.connect(self.updateStatusMessage)
 		self.displayThread.start()
 
-		""" 
-		Setup Timer 
+		"""
+		Setup Timer
 		this runs the trackMouse function every 50ms
 		"""
 		self._timer = QTimer(self)
@@ -255,10 +258,10 @@ class Gui(QMainWindow):
 
 	def clear_waypoints(self):
 		self.sm.waypoints = []
-		
+
 
 	def sliderChange(self):
-		""" 
+		"""
 		Function to change the slider labels when sliders are moved
 		and to command the arm to the given position
 		"""
@@ -273,7 +276,7 @@ class Gui(QMainWindow):
 		self.ui.rdoutSpeed.setText(str(self.ui.sldrSpeed.value()) + "%")
 		self.rexarm.set_torque_limits([self.ui.sldrMaxTorque.value()/100.0]*self.rexarm.num_joints, update_now = False)
 		self.rexarm.set_speeds_normalized_global(self.ui.sldrSpeed.value()/100.0, update_now = False)
-		joint_positions = np.array([self.ui.sldrBase.value()*D2R, 
+		joint_positions = np.array([self.ui.sldrBase.value()*D2R,
 						   self.ui.sldrShoulder.value()*D2R,
 						   self.ui.sldrElbow.value()*D2R,
 						   self.ui.sldrWrist.value()*D2R,
@@ -292,10 +295,10 @@ class Gui(QMainWindow):
 			self.ui.sldrMaxTorque.setValue(50)
 
 	def trackMouse(self):
-		""" 
+		"""
 		Mouse position presentation in GUI
-		TODO: after implementing workspace calibration 
-		display the world coordinates the mouse points to 
+		TODO: after implementing workspace calibration
+		display the world coordinates the mouse points to
 		in the RGB video image.
 		"""
 		x = QWidget.mapFromGlobal(self,QCursor.pos()).x()
@@ -306,17 +309,17 @@ class Gui(QMainWindow):
 		else:
 			x = x - MIN_X
 			y = y - MIN_Y
-			if(self.kinect.currentDepthFrame.any() != 0):			
+			if(self.kinect.currentDepthFrame.any() != 0):
 				z = self.kinect.currentDepthFrame[y][x]
 				self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" % (x,y,z))
-				camera_coordinates = np.array([[x],[y],[1]]).astype(np.float32)
-				xy_world = np.matmul(self.kinect.workcamera_affine,camera_coordinates) 
-				z_w = .1236*np.tan(z/2842.5 + 1.1863) - 0.94
-				self.ui.rdoutMouseWorld.setText("(%.2f,%.2f,%.2f)" % (xy_world[0], xy_world[1], z_w))
+				if (self.kinect.kinectCalibrated):
+					z_w = .1236*np.tan(z/2842.5 + 1.1863) - 0.94
+					xy_world = self.sm.worldCoordinates(x,y)
+					self.ui.rdoutMouseWorld.setText("(%.3f,%.3f,%.3f)" % (xy_world[0], xy_world[1], xy_world[2]))
 
 	def mousePressEvent(self, QMouseEvent):
-		""" 
-		Function used to record mouse click positions for calibration 
+		"""
+		Function used to record mouse click positions for calibration
 		"""
 
 		""" Get mouse posiiton """
@@ -336,9 +339,11 @@ class Gui(QMainWindow):
 				print("Have drop position")
 		if self.sm.current_state == "calibrate":
 			""" Change coordinates to image axis """
-			self.kinect.last_click[0] = x - MIN_X 
+			self.kinect.last_click[0] = x - MIN_X
 			self.kinect.last_click[1] = y - MIN_Y
 			self.kinect.new_click = True
+		if self.sm.current_state == "Calibration Accuracy":
+				self.sm.calibrateaccuracypt = (x,y)
 		#print(self.kinect.last_click)
 
 
@@ -348,6 +353,6 @@ def main():
 	app_window = Gui()
 	app_window.show()
 	sys.exit(app.exec_())
- 
+
 if __name__ == '__main__':
 	main()

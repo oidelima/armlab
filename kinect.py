@@ -15,6 +15,7 @@ class Kinect():
 		self.currentDepthFrame = np.array([])
 		self.previousDepthFrame = np.array([])
 		self.currentHiResFrame = np.array([])
+		self.workspacemask = np.array([])
 		freenect.sync_set_autoexposure(False)
 		freenect.sync_set_whitebalance(False)
 		if(freenect.sync_get_depth() == None):
@@ -25,6 +26,12 @@ class Kinect():
 		# mouse clicks & calibration variables
 		self.depth2rgb_affine = np.float32([[1,0,0],[0,1,0]])
 		self.workcamera_affine = np.float32([[1,0,0],[0,1,0]])
+
+		self.work_camera_extrinsic_inv = np.array([[0, 0, 0, 0],
+											   	   [0, 0, 0, 0],
+											   	   [0, 0, 0, 0],
+											       [0, 0, 0, 1]]).astype(np.float32)
+
 		self.kinectCalibrated = False
 		self.last_click = np.array([0,0])
 		self.new_click = False
@@ -36,6 +43,7 @@ class Kinect():
 		self.intrinsic_matrix_inverse = np.zeros((3,3),float)
 		self.corners_rgb = []
 		self.corners_depth = []
+		self.Z_c = 0.0
 
 		""" Extra arrays for colormaping the depth image"""
 		self.DepthHSV = np.zeros((480,640,3)).astype(np.uint8)
@@ -90,6 +98,10 @@ class Kinect():
 
 	def convertFrame(self):
 		try:
+			# for i in range(3):
+			# 	self.currentVideoFrame[...,i] = cv2.bitwise_and(self.currentVideoFrame[...,i], self.currentVideoFrame[...,i], mask = self.workspacemask)
+
+
 			img = QImage(self.currentVideoFrame, self.currentVideoFrame.shape[1], self.currentVideoFrame.shape[0], QImage.Format_RGB888)
 			return img
 		except:
@@ -100,6 +112,11 @@ class Kinect():
 			self.DepthHSV[...,0] = self.currentDepthFrame
 			self.DepthHSV[...,1] = 0x9F
 			self.DepthHSV[...,2] = 0xFF
+
+			self.workspacemask = np.zeros((480,640,1)).astype(np.uint8)
+			self.workspacemask[self.currentDepthFrame < 724.5 ,0] = 255
+			cv2.imwrite("workspacemask.jpg",self.workspacemask)
+
 			self.DepthCM = cv2.cvtColor(self.DepthHSV,cv2.COLOR_HSV2RGB)
 			self.roiContours(self.DepthCM, 400)
 			img = QImage(self.DepthCM, self.DepthCM.shape[1], self.DepthCM.shape[0], QImage.Format_RGB888)
@@ -179,22 +196,20 @@ class Kinect():
 		fontScale = .5
 		fontColor = (255,255,255)
 		lineType  = 1
-		for x in self.block_contours:
-			m = cv2.moments(x)
-			if abs(m["m00"]) >0:
-				cx = int(m["m10"]/m["m00"])
-				cy = int(m["m01"]/m["m00"])
-				cz = self.currentDepthFrame[cy][cx]
-				self.block_coordinates_raw.append([cx,cy,cz])
-				camera_coordinates = np.array([[cx],[cy],[1]]).astype(np.float32)
-				xy_world = np.matmul(self.workcamera_affine,camera_coordinates)
-				z_w = .1236*np.tan(cz/2842.5 + 1.1863)
-				cx_w = xy_world[0]
-				cy_w = xy_world[1]
-				cz_w = .94 - z_w
-				self.block_coordinates.append([cx_w,cy_w,cz_w])
-				location = str(np.round(cx_w[0],3)) +", "+ str(np.round(cy_w[0],3)) +", "+ str(np.round(cz_w,3))
-				cv2.putText(self.DepthCMThreshold, location, (cy,cx), font, fontScale, fontColor, lineType)
+		# for x in self.block_contours:
+		# 	m = cv2.moments(x)
+		# 	if abs(m["m00"]) >0:
+		# 		cx = int(m["m10"]/m["m00"])
+		# 		cy = int(m["m01"]/m["m00"])
+		# 		cz = self.currentDepthFrame[cy][cx]
+		# 		self.block_coordinates_raw.append([cx,cy,cz])
+		# 		camera_coordinates = np.array([[cx],[cy],[1]]).astype(np.float32)
+		# 		xy_world = np.matmul(self.workcamera_affine,camera_coordinates)
+		# 		z_w = .1236*np.tan(cz/2842.5 + 1.1863)
+		# 		cx_w = xy_world[0]
+		# 		cy_w = xy_world[1]
+		# 		cz_w = .94 - z_w
+		# 		self.block_coordinates.append([cx_w,cy_w,cz_w])
 
 	def centroidBlock(self, contour):
 			m = cv2.moments(contour)
@@ -260,9 +275,12 @@ class Kinect():
 			contour = cv2.findContours(block, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 			coordinates = self.meanPose(contour[1])
 			self.blocks[color] = {}
+			self.blocks[color]["color"] = str(color)
 			self.blocks[color]["centroid"] = (coordinates[0],coordinates[1])
 			self.blocks[color]["orientation"] = (coordinates[2], coordinates[3])
+			self.blocks[color]['boolean'] = True
 		except:
+			self.blocks[color]["boolean"] = False
 			return None
 
 	def detectBlocksInDepthImage(self):
@@ -327,8 +345,7 @@ class Kinect():
 				y4 = corners[3][1]
 				slope1 = math.atan2((y1 - y2),(x1 - x2))
 				slope2 = math.atan2((y3 - y4),(x3 - x4))
-				#print("corners: ",(x1,y1,x2,y2,x3,y3,x4,y4))
-				#print("Slopes: ", slope1,slope2)
+
 		except:
 			return None
 
@@ -346,24 +363,36 @@ class Kinect():
 		image = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
 		value = image[...,2]
 		hue = image[...,0]
+		saturation = image[...,1]
 		hue_green = cv2.inRange(hue, 50, 70)
 		hue_blue = cv2.inRange(hue, 110, 130)
 		hue_yellow = cv2.inRange(hue, 20, 40)
 		hue_red = cv2. inRange(hue, 170, 179)
-		hue_orange = cv2.inRange(hue, 0, 15)
+		hue_orange = cv2.inRange(hue, 0, 10)
 		hue_pink = cv2.inRange(hue, 160, 170)
 		hue_purple = cv2.inRange(hue, 130,145)
 		value_black = cv2.inRange(value, 0 , 110)
+		value_pink = cv2.inRange(hue, 200, 255)
 
 		self.roi = cv2.bitwise_and(hue, hue, mask = self.BlockMask)
 		red = cv2.bitwise_and(hue_red, hue_red, mask = self.BlockMask)
 		green = cv2.bitwise_and(hue_green, hue_green, mask = self.BlockMask)
 		blue = cv2.bitwise_and(hue_blue, hue_blue, mask = self.BlockMask)
+		orange = cv2.bitwise_and(hue_orange, hue_orange, mask = self.BlockMask)
 		yellow = cv2.bitwise_and(hue_yellow, hue_yellow, mask = self.BlockMask)
 		pink = cv2.bitwise_and(hue_pink, hue_pink, mask = self.BlockMask)
 		purple = cv2.bitwise_and(hue_purple, hue_purple, mask = self.BlockMask)
 		orange = cv2.bitwise_and(hue_orange, hue_orange, mask = self.BlockMask)
 		black = cv2.bitwise_and(value_black,value_black, mask = self.BlockMask)
+
+		cv2.imwrite("red.jpg", red)
+		cv2.imwrite("orange.jpg", orange)
+		cv2.imwrite("blue.jpg", blue)
+		cv2.imwrite("yellow.jpg", yellow)
+		cv2.imwrite("pink.jpg", pink)
+		cv2.imwrite("green.jpg", green)
+		cv2.imwrite("purple.jpg", purple)
+		cv2.imwrite("black.jpg", black)
 
 		return green, blue, yellow, red, orange, purple, pink, black
 
@@ -428,9 +457,26 @@ class Kinect():
 		return transformedDepthFrame
 
 	def loadCameraCalibration(self):
-		self.intrinsic_matrix = np.array([[492.43967452, 0.0, 305.98100007],[0.0, 492.06649804, 286.20904428],[0.0, 0.0, 1.0]])
-		self.intrinsic_matrix_inverse = np.linalg.inv(self.intrinsic_matrix)
+		self.intrinsic_matrix = np.array([[990.75, 0.0, 331.10],[0.0, 988.20, 230.94],[0.0, 0.0, 1.0]])
 		return self.intrinsic_matrix
+
+	def intrinsic_matrix_inverse_f(self):
+		camera_intrinsic_matrix = self.loadCameraCalibration()
+		alpha = camera_intrinsic_matrix[0][0]
+		beta = camera_intrinsic_matrix[1][1]
+		u0 = camera_intrinsic_matrix[0][2]
+		v0 = camera_intrinsic_matrix[1][2]
+		matrix_1 = np.array([[1.0/alpha,      0.0, 0.0],
+							 [      0.0, 1.0/beta, 0.0],
+							 [      0.0,      0.0, 1.0]])
+
+		matrix_2 = np.array([[1.0, 0.0, -u0],
+							 [0.0, 1.0, -v0],
+							 [0.0, 0.0, 1.0]])
+
+		self.intrinsic_matrix_inverse = np.matmul(matrix_1, matrix_2)
+		self.intrinsic_matrix_inverse = self.intrinsic_matrix_inverse.astype(np.float32)
+		return self.intrinsic_matrix_inverse
 
 	def affineworkspace(self, coordinates):
 		d = 0.305
@@ -474,15 +520,26 @@ class Kinect():
 		self.workcamera_affine = vector_x.reshape(2,3)
 		return self.workcamera_affine
 
-	def workspaceTransform(self, object_points, image_points):
+	def workspaceTransform(self, image_points):
 		camera_intrinsic_matrix = self.loadCameraCalibration()
-		dist_coeffs = np.array([[0.4799379,-0.94025256,  0.00780928,  0.00295796, -0.06855816]]).astype(np.float32)
-		(success, rot_vec, trans_vec) = cv2.solvePnP(object_points, image_points, camera_intrinsic_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
-		self.rotation_matrix = np.array([[0.0, -rot_vec[2], rot_vec[1]],
-										[rot_vec[2], 0.0, -rot_vec[0]],
-										[-rot_vec[1], rot_vec[0], 0.0]])
-		self.translation_matrix = trans_vec
-		return trans_vec
+		dist_coeffs = np.array([[0.997871942, -8.92181313,  -.00374535215,  .0174515494, 35.0210420]]).astype(np.float32)
+		self.intrinsic_matrix_inverse_f()
+
+		length = 0.610
+		d = self.currentDepthFrame[image_points[0][1]][image_points[0][0]]
+
+		self.Z_c =  0.1236*tan(d/2842.5 + 1.1863)
+		image_points = image_points[:4]
+		object_points = np.array([[0.0, 0.0, 0.0],[0.0, length, 0.0],[length, length, 0.0],[length, 0.0, 0.0]]).astype(np.float32)
+
+		###Finding extrinsic matrix and its inverse
+		(success, rot_vec, trans_vec) = cv2.solvePnP(object_points, image_points.astype(np.float32), camera_intrinsic_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE)
+		rot_mat = cv2.Rodrigues(rot_vec)
+		rotation_matrix_w2c  = np.append(rot_mat[0],[[0,0,0]],axis = 0)
+		extrinsic_matrix = np.concatenate((rotation_matrix_w2c, np.append(trans_vec,[[1]], axis = 0)), axis = 1)
+		extrinsic_matrix_inv = np.linalg.inv(extrinsic_matrix)
+		self.work_camera_extrinsic_inv = extrinsic_matrix_inv
+		return self.work_camera_extrinsic_inv
 
 	def auto_canny(self,image, sigma):
 		#image = cv2.GaussianBlur(image, (5,5),0)
@@ -495,7 +552,7 @@ class Kinect():
 
 	def rgbedges(self):
 		image = freenect.sync_get_video_with_res()[0]
-		image = cv2.medianBlur(image, 3)
+		image = cv2.medianBlur(image, 5)
 		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 		ret,image  = cv2.threshold(image,220,255,cv2.THRESH_BINARY)
 		cv2.imwrite("gray_rgb.jpg",image)
@@ -509,21 +566,18 @@ class Kinect():
 		image  = cv2.inRange(image, 717, 725)
 		image = image
 		cv2.imwrite("gray_depth.jpg",image)
-		image = cv2.Canny(image, 100, 250)
+		image = cv2.Canny(image, 150, 250)
 		cv2.imwrite("gray_depth_edge.jpg",image)
 		return image
 
 	def cornerscal(self, image):
 		try:
-			#print("trying to find corners")
 			corners = cv2.goodFeaturesToTrack(image.astype(np.float32), 4,.1,100)
 			return corners
 		except:
-			#print("could not find four corners try again")
 			return None
 
 	def drawinglines(self, line_parameters):
-		print("drawing lines")
 		depth = self.currentDepthFrame*0
 		for i in range(len(line_parameters)):
 			theta = line_parameters[i][0][1]
@@ -540,7 +594,6 @@ class Kinect():
 		return depth
 
 	def houghlines(self):
-		print("finding lines")
 		depth = self.currentDepthFrame*0
 
 		rgblines = []
@@ -548,8 +601,6 @@ class Kinect():
 		while(len(rgblines) != 4):
 			rgbedges = self.rgbedges()
 			rgblines = cv2.HoughLines( rgbedges, 1, np.pi/180, 130)
-			print(len(rgblines))
-		print("lines found rgb")
 
 		depthlines = []
 		counter = 20
@@ -557,23 +608,19 @@ class Kinect():
 		while(len(depthlines) != 4 and counter != 0):
 			depthlines = cv2.HoughLines( depthedges, 1, np.pi/90, 100 - (20 - counter))
 			counter = counter - 1
-			print(len(depthlines))
-
-		print("lines found depth")
 
 		depth = self.drawinglines(depthlines)
 		cv2.imwrite("g_depth.jpg",depth)
 		self.corners_depth = self.cornerscal(depth)
-		print("Depth corners",self.corners_depth)
+
 		depth = depth*0
 		depth = self.drawinglines(rgblines)
 		cv2.imwrite("g_rgb.jpg",depth)
 		self.corners_rgb = self.cornerscal(depth)
-		print("RGB corners",self.corners_rgb)
+
 
 		for i in range(4):
-			print("sorting")
-			print(self.corners_depth[i][0][0])
+
 			if (self.corners_depth[i][0][0]>400 and self.corners_depth[i][0][1]<200):
 				depth_corner_lb = self.corners_depth[i]
 			elif (self.corners_depth[i][0][0]<200 and self.corners_depth[i][0][1]<200):
@@ -584,7 +631,7 @@ class Kinect():
 				depth_corner_rb = self.corners_depth[i]
 
 		for i in range(4):
-			print("sorting")
+
 			if (self.corners_rgb[i][0][0]>400 and self.corners_rgb[i][0][1]<200):
 				rgb_corner_lb = self.corners_rgb[i]
 			elif (self.corners_rgb[i][0][0]<200 and self.corners_rgb[i][0][1]<200):
@@ -597,25 +644,3 @@ class Kinect():
 
 		self.corners_depth = [depth_corner_lb, depth_corner_lt, depth_corner_rt, depth_corner_rb]
 		self.corners_rgb = [rgb_corner_lb, rgb_corner_lt, rgb_corner_rt, rgb_corner_rb]
-
-		print(self.corners_depth,self.corners_rgb)
-""" def apriltagtransformation(self):
-		detector = apriltag("tagStandard41h12", threads=4, decimate=2.0)
-		d = .060
-		object_points = np.array([[-d,-d,0.0],
-								  [d, -d, 0.0],
-								  [d, d, 0.0],
-								  [-d, d, 0.0]],dtype = "double")
-
-		image = self.currentVideoFrame
-		image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-		detections = detector.detect(image)
-		translation_vector = []
-		for tag in detections:
-			image_points = tag['lb-rb-rt-lt']
-			translation = self.workspaceTransform(object_points, image_points)
-			x_average = (image_points[0][0] + image_points[1][0] + image_points[2][0] + image_points[3][0])/4
-			y_average = (image_points[0][1] + image_points[1][1] + image_points[2][1] + image_points[3][1])/4
-			translation_vector.append([x_average,y_average])
-		return translation_vector"""
-
